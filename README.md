@@ -122,7 +122,9 @@ z               zoxide (smart cd)
 Install all at once:
 
 ```zsh
-i neovim git ripgrep fd fzf eza bat zoxide starship \
+i base-devel neovim git ripgrep fd fzf eza bat zoxide starship \
   ttf-nerd-fonts-symbols-common wl-clipboard
-pget paru
+git clone https://aur.archlinux.org/paru.git
+cd paru
+makepkg -si
 ```
