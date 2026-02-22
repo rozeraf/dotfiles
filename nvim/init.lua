@@ -39,6 +39,9 @@ vim.keymap.set({ "n", "v" }, "x", '"_x')
 vim.keymap.set({ "n", "v" }, "<leader>d", '"+d')
 vim.keymap.set("n", "<leader>dd", '"+dd')
 
+-- leader+xa - сохранить и выйти из всех буферов
+vim.keymap.set("n", "<leader>xa", "<cmd>wa<cr><cmd>qa<cr>", { desc = "Save all and quit" })
+
 -- ─── VSCode ────────────────────────────────────────────────────────────────
 if vim.g.vscode then
 	require("lazy").setup({
@@ -100,7 +103,6 @@ else
 	vim.opt.relativenumber = false
 	vim.cmd("syntax on")
 
-	-- Прозрачный фон
 	vim.cmd([[
     hi Normal       guibg=NONE ctermbg=NONE
     hi NormalNC     guibg=NONE ctermbg=NONE
@@ -109,12 +111,44 @@ else
     hi SignColumn   guibg=NONE ctermbg=NONE
   ]])
 
-	-- Автодополнение скобок
 	vim.keymap.set("i", "(", "()<Left>")
 	vim.keymap.set("i", "[", "[]<Left>")
 	vim.keymap.set("i", "{", "{}<Left>")
 	vim.keymap.set("i", '"', '""<Left>')
 	vim.keymap.set("i", "'", "''<Left>")
+
+	-- LSP keymaps (применяются при attach)
+	vim.api.nvim_create_autocmd("LspAttach", {
+		callback = function(event)
+			local opts = { buffer = event.buf }
+			vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+			vim.keymap.set("n", "gD", vim.lsp.buf.declaration, opts)
+			vim.keymap.set("n", "gi", vim.lsp.buf.implementation, opts)
+			vim.keymap.set("n", "gr", vim.lsp.buf.references, opts)
+			vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
+			vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
+			vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
+			vim.keymap.set("n", "<leader>de", vim.diagnostic.open_float, opts)
+			vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, opts)
+			vim.keymap.set("n", "]d", vim.diagnostic.goto_next, opts)
+		end,
+	})
+
+	-- Диагностика: иконки в gutter
+	vim.diagnostic.config({
+		signs = {
+			text = {
+				[vim.diagnostic.severity.ERROR] = "",
+				[vim.diagnostic.severity.WARN] = "",
+				[vim.diagnostic.severity.INFO] = "",
+				[vim.diagnostic.severity.HINT] = "",
+			},
+		},
+		virtual_text = true,
+		update_in_insert = false,
+		underline = true,
+		severity_sort = true,
+	})
 
 	require("lazy").setup({
 		{ "nvim-lua/plenary.nvim" },
@@ -132,18 +166,21 @@ else
 				vim.keymap.set({ "n", "x", "o" }, "gs", "<Plug>(leap-from-window)")
 			end,
 		},
+
 		{
 			"j-hui/fidget.nvim",
 			config = function()
 				require("fidget").setup({})
 			end,
 		},
+
 		{
 			"folke/which-key.nvim",
 			config = function()
 				require("which-key").setup({})
 			end,
 		},
+
 		{
 			"catppuccin/nvim",
 			name = "catppuccin",
@@ -155,17 +192,13 @@ else
 				vim.cmd("colorscheme catppuccin-mocha")
 			end,
 		},
+
 		{
 			"folke/noice.nvim",
 			event = "VeryLazy",
-			dependencies = {
-				"MunifTanjim/nui.nvim",
-			},
+			dependencies = { "MunifTanjim/nui.nvim" },
 			opts = {
-				cmdline = {
-					view = "cmdline",
-				},
-				-- ВКЛЮЧАЕМ ПОДСКАЗКИ (LSP)
+				cmdline = { view = "cmdline" },
 				lsp = {
 					override = {
 						["vim.lsp.util.convert_input_to_markdown_lines"] = true,
@@ -174,14 +207,9 @@ else
 					},
 					signature = {
 						enabled = true,
-						auto_open = {
-							enabled = true,
-							trigger = true, -- Автоматически при вводе ( или ,
-						},
+						auto_open = { enabled = true, trigger = true },
 					},
-					hover = {
-						enabled = true, -- Подсказки при наведении (K)
-					},
+					hover = { enabled = true },
 				},
 				presets = {
 					bottom_search = true,
@@ -198,7 +226,61 @@ else
 				},
 			},
 		},
+
 		{ "tpope/vim-fugitive" },
+		{
+			"nvim-neo-tree/neo-tree.nvim",
+			branch = "v3.x",
+			dependencies = {
+				"nvim-lua/plenary.nvim",
+				"nvim-tree/nvim-web-devicons",
+				"MunifTanjim/nui.nvim",
+			},
+			keys = {
+				{ "<leader>e", "<cmd>Neotree toggle<cr>", desc = "Toggle file tree" },
+			},
+			opts = {
+				window = {
+					position = "right",
+					width = 35,
+					mappings = {
+						["l"] = "open",
+						["h"] = "close_node",
+					},
+				},
+				filesystem = {
+					filtered_items = {
+						hide_dotfiles = false,
+						hide_gitignored = false,
+					},
+					follow_current_file = {
+						enabled = true,
+					},
+				},
+			},
+		},
+		-- Диагностика по всему проекту
+		{
+			"folke/trouble.nvim",
+			dependencies = { "nvim-tree/nvim-web-devicons" },
+			config = function()
+				require("trouble").setup({})
+				vim.keymap.set(
+					"n",
+					"<leader>xx",
+					"<cmd>Trouble diagnostics toggle<cr>",
+					{ desc = "Diagnostics (project)" }
+				)
+				vim.keymap.set(
+					"n",
+					"<leader>xb",
+					"<cmd>Trouble diagnostics toggle filter.buf=0<cr>",
+					{ desc = "Diagnostics (buffer)" }
+				)
+				vim.keymap.set("n", "<leader>xs", "<cmd>Trouble symbols toggle<cr>", { desc = "Symbols" })
+				vim.keymap.set("n", "<leader>xr", "<cmd>Trouble lsp_references toggle<cr>", { desc = "LSP References" })
+			end,
+		},
 
 		{
 			"nvim-telescope/telescope.nvim",
@@ -211,37 +293,20 @@ else
 				vim.keymap.set("n", "<leader>fh", require("telescope.builtin").help_tags)
 				vim.keymap.set("n", "<leader>fr", require("telescope.builtin").oldfiles)
 				vim.keymap.set("n", "<leader>fs", require("telescope.builtin").lsp_document_symbols)
+				vim.keymap.set("n", "<leader>fd", require("telescope.builtin").diagnostics)
 			end,
 		},
 
-		-- ─── oil.nvim ───────────────────────────────────────────────────────
 		{
 			"stevearc/oil.nvim",
 			dependencies = { "nvim-tree/nvim-web-devicons" },
 			config = function()
 				require("oil").setup({
-					-- показывать скрытые файлы по умолчанию
-					view_options = {
-						show_hidden = true,
-					},
-					-- колонки: иконка + размер + дата изменения
-					columns = {
-						"icon",
-						"size",
-						"mtime",
-					},
-					-- буфер oil ведёт себя как обычный буфер
-					buf_options = {
-						buflisted = false,
-						bufhidden = "hide",
-					},
-					-- открывать в текущем окне, а не в сплите
+					view_options = { show_hidden = true },
+					columns = { "icon", "size", "mtime" },
+					buf_options = { buflisted = false, bufhidden = "hide" },
 					default_file_explorer = true,
-					float = {
-						padding = 2,
-						max_width = 80,
-						max_height = 30,
-					},
+					float = { padding = 2, max_width = 80, max_height = 30 },
 					keymaps = {
 						["g?"] = "actions.show_help",
 						["<CR>"] = "actions.select",
@@ -258,62 +323,137 @@ else
 						["gs"] = "actions.change_sort",
 						["gx"] = "actions.open_external",
 						["g."] = "actions.toggle_hidden",
+						["l"] = "actions.select",
+						["h"] = "actions.parent",
 					},
-					-- отключаем дефолтные кеймапы, используем свои
 					use_default_keymaps = false,
 				})
-				-- `-` в normal mode открывает oil для папки текущего файла
 				vim.keymap.set("n", "-", "<CMD>Oil<CR>", { desc = "Open parent directory (oil)" })
 			end,
 		},
 
-		-- ─── grug-far.nvim ──────────────────────────────────────────────────
 		{
 			"MagicDuck/grug-far.nvim",
 			config = function()
 				require("grug-far").setup({
-					-- окно открывается справа
 					windowCreationCommand = "vsplit",
-					-- ripgrep флаги по умолчанию
 					extraRgArgs = "",
-					-- ширина окна (в процентах от редактора)
 					resultsSeparatorLineChar = "─",
 				})
-				-- открыть с словом под курсором
 				vim.keymap.set("n", "<leader>sr", function()
 					require("grug-far").open({ prefills = { search = vim.fn.expand("<cword>") } })
 				end, { desc = "Search and replace (word under cursor)" })
-				-- открыть пустым
 				vim.keymap.set("n", "<leader>sR", function()
 					require("grug-far").open()
 				end, { desc = "Search and replace (empty)" })
-				-- в visual mode — искать выделенное
 				vim.keymap.set("v", "<leader>sr", function()
 					require("grug-far").with_visual_selection()
 				end, { desc = "Search and replace (selection)" })
 			end,
 		},
 
-		-- Treesitter
 		{
 			"nvim-treesitter/nvim-treesitter",
 			build = ":TSUpdate",
 			lazy = false,
 			config = function()
 				require("nvim-treesitter.config").setup({
-					ensure_installed = { "lua", "python", "javascript", "typescript", "rust" },
+					ensure_installed = { "lua", "python", "javascript", "typescript", "tsx", "rust" },
 					highlight = { enable = true },
 					indent = { enable = true },
 				})
 			end,
 		},
+
+		-- Автодополнение
+		{
+			"hrsh7th/nvim-cmp",
+			dependencies = {
+				"hrsh7th/cmp-nvim-lsp",
+				"hrsh7th/cmp-buffer",
+				"hrsh7th/cmp-path",
+				"L3MON4D3/LuaSnip",
+				"saadparwaiz1/cmp_luasnip",
+				"rafamadriz/friendly-snippets",
+			},
+			config = function()
+				local cmp = require("cmp")
+				local luasnip = require("luasnip")
+
+				require("luasnip.loaders.from_vscode").lazy_load()
+
+				cmp.setup({
+					snippet = {
+						expand = function(args)
+							luasnip.lsp_expand(args.body)
+						end,
+					},
+					mapping = cmp.mapping.preset.insert({
+						["<C-Space>"] = cmp.mapping.complete(),
+						["<CR>"] = cmp.mapping.confirm({ select = true }),
+						["<Tab>"] = cmp.mapping(function(fallback)
+							if cmp.visible() then
+								cmp.select_next_item()
+							elseif luasnip.expand_or_jumpable() then
+								luasnip.expand_or_jump()
+							else
+								fallback()
+							end
+						end, { "i", "s" }),
+						["<S-Tab>"] = cmp.mapping(function(fallback)
+							if cmp.visible() then
+								cmp.select_prev_item()
+							elseif luasnip.jumpable(-1) then
+								luasnip.jump(-1)
+							else
+								fallback()
+							end
+						end, { "i", "s" }),
+						["<C-e>"] = cmp.mapping.abort(),
+						["<C-u>"] = cmp.mapping.scroll_docs(-4),
+						["<C-d>"] = cmp.mapping.scroll_docs(4),
+					}),
+					sources = cmp.config.sources({
+						{ name = "nvim_lsp" },
+						{ name = "luasnip" },
+						{ name = "path" },
+					}, {
+						{ name = "buffer" },
+					}),
+				})
+			end,
+		},
+
+		-- Линтинг (eslint и др. — не через LSP)
+		{
+			"mfussenegger/nvim-lint",
+			config = function()
+				local lint = require("lint")
+				lint.linters_by_ft = {
+					javascript = { "eslint_d" },
+					typescript = { "eslint_d" },
+					javascriptreact = { "eslint_d" },
+					typescriptreact = { "eslint_d" },
+				}
+				vim.api.nvim_create_autocmd({ "BufWritePost", "BufReadPost", "InsertLeave" }, {
+					callback = function()
+						lint.try_lint()
+					end,
+				})
+			end,
+		},
+
 		{
 			"stevearc/conform.nvim",
 			config = function()
 				require("conform").setup({
 					formatters_by_ft = {
+						c = { "clang_format" },
+						cpp = { "clang_format" },
 						javascript = { "prettier" },
 						typescript = { "prettier" },
+						javascriptreact = { "prettier" },
+						typescriptreact = { "prettier" },
 						json = { "prettier" },
 						html = { "prettier" },
 						css = { "prettier" },
@@ -327,20 +467,106 @@ else
 				})
 			end,
 		},
-		-- LSP
+
+		-- ─── Mason + LSP ────────────────────────────────────────────────────
 		{
 			"williamboman/mason.nvim",
 			config = function()
 				require("mason").setup()
+				-- форматтеры и линтеры (не LSP-серверы)
 				local mr = require("mason-registry")
-				for _, tool in ipairs({ "prettier", "stylua", "black" }) do
-					local p = mr.get_package(tool)
-					if not p:is_installed() then
+				for _, tool in ipairs({ "prettier", "stylua", "black", "eslint_d", "ruff", "clang-format" }) do
+					local ok, p = pcall(mr.get_package, tool)
+					if ok and not p:is_installed() then
 						p:install()
 					end
 				end
 			end,
 		},
+
+		{
+			"williamboman/mason-lspconfig.nvim",
+			dependencies = { "williamboman/mason.nvim" },
+			config = function()
+				require("mason-lspconfig").setup({
+					ensure_installed = { "lua_ls", "pyright", "ts_ls", "clangd" },
+					automatic_enable = true,
+				})
+			end,
+		},
+
+		{
+			"neovim/nvim-lspconfig",
+			dependencies = {
+				"williamboman/mason-lspconfig.nvim",
+				"hrsh7th/cmp-nvim-lsp",
+			},
+			config = function()
+				local capabilities = require("cmp_nvim_lsp").default_capabilities()
+
+				-- capabilities для всех серверов
+				vim.lsp.config("*", { capabilities = capabilities })
+				vim.lsp.config("clangd", {
+					cmd = { "clangd", "--background-index", "--clang-tidy" },
+				})
+				vim.lsp.config("lua_ls", {
+					settings = {
+						Lua = {
+							diagnostics = { globals = { "vim" } },
+							workspace = {
+								checkThirdParty = false,
+								library = {
+									vim.fn.expand("$VIMRUNTIME/lua"),
+									vim.fn.stdpath("data") .. "/lazy",
+								},
+							},
+							telemetry = { enable = false },
+						},
+					},
+				})
+
+				vim.lsp.config("pyright", {})
+
+				vim.lsp.config("ts_ls", {
+					init_options = {
+						preferences = { importModuleSpecifierPreference = "relative" },
+					},
+				})
+			end,
+		},
+
+		-- ─── Git ────────────────────────────────────────────────────────────
+		{
+			"sindrets/diffview.nvim",
+			dependencies = { "nvim-tree/nvim-web-devicons" },
+			cmd = { "DiffviewOpen", "DiffviewFileHistory" },
+			keys = {
+				{ "<leader>gd", "<cmd>DiffviewOpen<cr>", desc = "Diffview (working tree)" },
+				{ "<leader>gh", "<cmd>DiffviewFileHistory %<cr>", desc = "Diffview (file history)" },
+				{ "<leader>gH", "<cmd>DiffviewFileHistory<cr>", desc = "Diffview (repo history)" },
+				{ "<leader>gq", "<cmd>DiffviewClose<cr>", desc = "Diffview close" },
+			},
+		},
+
+		{
+			"NeogitOrg/neogit",
+			dependencies = {
+				"nvim-lua/plenary.nvim",
+				"sindrets/diffview.nvim",
+				"nvim-telescope/telescope.nvim",
+			},
+			cmd = "Neogit",
+			keys = {
+				{ "<leader>gg", "<cmd>Neogit<cr>", desc = "Neogit" },
+			},
+			opts = {
+				integrations = {
+					diffview = true,
+					telescope = true,
+				},
+			},
+		},
+
 		{
 			"RRethy/vim-illuminate",
 			config = function()
@@ -350,37 +576,22 @@ else
 				})
 			end,
 		},
-		{
-			"williamboman/mason-lspconfig.nvim",
-			config = function()
-				require("mason-lspconfig").setup({
-					ensure_installed = { "lua_ls", "pyright", "ts_ls" },
-					automatic_installation = true,
-				})
-			end,
-		},
-		{
-			"neovim/nvim-lspconfig",
-			dependencies = {
-				"williamboman/mason.nvim",
-				"williamboman/mason-lspconfig.nvim",
-			},
-			config = function()
-				vim.lsp.config("lua_ls", {})
-				vim.lsp.config("pyright", {})
-				vim.lsp.config("ts_ls", {})
 
-				vim.lsp.enable({ "lua_ls", "pyright", "ts_ls" })
-			end,
-		},
-		-- Statusline
 		{
 			"nvim-lualine/lualine.nvim",
 			dependencies = { "nvim-tree/nvim-web-devicons" },
 			config = function()
 				require("lualine").setup({
-					options = {
-						theme = "auto",
+					options = { theme = "auto" },
+					sections = {
+						lualine_c = {
+							{ "filename" },
+							{
+								"diagnostics",
+								sources = { "nvim_diagnostic" },
+								symbols = { error = " ", warn = " ", info = " ", hint = " " },
+							},
+						},
 					},
 				})
 			end,
