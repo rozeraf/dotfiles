@@ -28,18 +28,12 @@ vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 vim.keymap.set({ "n", "v" }, "<leader>y", '"+y')
 vim.keymap.set({ "n", "v" }, "<leader>p", '"+p')
--- d/x удаляют в никуда, кроме terminal-буферов (modifiable=false)
-vim.keymap.set({ "n", "v" }, "d", function()
-	return vim.bo.buftype == "terminal" and "d" or '"_d'
-end, { expr = true })
-vim.keymap.set("n", "dd", function()
-	return vim.bo.buftype == "terminal" and "dd" or '"_dd'
-end, { expr = true })
+-- d удаляет в никуда
+vim.keymap.set({ "n", "v" }, "d", '"_d')
+vim.keymap.set("n", "dd", '"_dd')
 
 -- x тоже
-vim.keymap.set({ "n", "v" }, "x", function()
-	return vim.bo.buftype == "terminal" and "x" or '"_x'
-end, { expr = true })
+vim.keymap.set({ "n", "v" }, "x", '"_x')
 
 -- leader+d — явное вырезание (в буфер обмена)
 vim.keymap.set({ "n", "v" }, "<leader>d", '"+d')
