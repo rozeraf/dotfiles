@@ -28,6 +28,7 @@ vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 vim.keymap.set({ "n", "v" }, "<leader>y", '"+y')
 vim.keymap.set({ "n", "v" }, "<leader>p", '"+p')
+vim.keymap.set("n", "<leader>a", "<cmd>Alpha<CR>", { desc = "Open Alpha dashboard" })
 -- d/x удаляют в никуда (кроме terminal/prompt)
 local function safe_del(key)
 	return function()
@@ -428,8 +429,6 @@ else
 		},
 
 		-- ─── autopairs (умнее ручных биндов) ────────────────────────────────
-		-- ВНИМАНИЕ: убраны ручные биндинги (, [, {, ", ' из insert mode —
-		-- autopairs их полностью заменяет с учётом treesitter-контекста
 		{
 			"windwp/nvim-autopairs",
 			event = "InsertEnter",
@@ -442,7 +441,6 @@ else
 						typescript = { "template_string" },
 					},
 				})
-				-- интеграция с cmp: скобка добавляется после confirm
 				local cmp_autopairs = require("nvim-autopairs.completion.cmp")
 				require("cmp").event:on("confirm_done", cmp_autopairs.on_confirm_done())
 			end,
@@ -512,7 +510,6 @@ else
 					}, {
 						{ name = "buffer" },
 					}),
-					-- внешний вид: тип источника и иконка
 					formatting = {
 						format = function(entry, item)
 							local kind_icons = {
@@ -558,9 +555,6 @@ else
 		},
 
 		-- ─── AI автодополнение (Codeium) ─────────────────────────────────────
-		-- Бесплатный без ограничений, ghost-text инлайн.
-		-- При первом запуске выполни :Codeium Auth
-		-- Принять: <C-l>, отклонить: <C-]>, принять слово: <C-j>
 		{
 			"Exafunction/codeium.nvim",
 			dependencies = {
@@ -631,7 +625,6 @@ else
 					"eslint_d",
 					"ruff",
 					"clang-format",
-					-- добавлены emmet и markdown lsp
 					"emmet-language-server",
 				}) do
 					local ok, p = pcall(mr.get_package, tool)
@@ -711,7 +704,6 @@ else
 					},
 				})
 
-				-- emmet: html/css/jsx/tsx
 				vim.lsp.config("emmet_language_server", {
 					filetypes = {
 						"html",
@@ -724,7 +716,6 @@ else
 					},
 				})
 
-				-- marksman: markdown LSP (go-to, references, completions)
 				vim.lsp.config("marksman", {})
 			end,
 		},
@@ -826,12 +817,10 @@ else
 						color_icons = true,
 					},
 				})
-				-- навигация между буферами
 				vim.keymap.set("n", "<S-l>", "<cmd>BufferLineCycleNext<cr>", { desc = "next buffer" })
 				vim.keymap.set("n", "<S-h>", "<cmd>BufferLineCyclePrev<cr>", { desc = "prev buffer" })
 				vim.keymap.set("n", "<leader>bd", "<cmd>bdelete<cr>", { desc = "close buffer" })
 				vim.keymap.set("n", "<leader>bp", "<cmd>BufferLineTogglePin<cr>", { desc = "pin buffer" })
-				-- прыжок по номеру (1-9)
 				for i = 1, 9 do
 					vim.keymap.set("n", "<leader>" .. i, function()
 						require("bufferline").go_to(i, true)
@@ -849,29 +838,21 @@ else
 					size = 15,
 					open_mapping = [[<C-`>]],
 					direction = "horizontal",
-					shade_terminals = false, -- ← выключить, иначе перебивает цвет
+					shade_terminals = false,
 					persist_size = true,
 					persist_mode = true,
 					highlights = {
-						Normal = {
-							guibg = "#1a1a2e",
-						},
-						NormalFloat = {
-							guibg = "#1a1a2e",
-						},
-						FloatBorder = {
-							guifg = "#45475a",
-							guibg = "#1a1a2e",
-						},
+						Normal = { guibg = "#1a1a2e" },
+						NormalFloat = { guibg = "#1a1a2e" },
+						FloatBorder = { guifg = "#45475a", guibg = "#1a1a2e" },
 					},
 					float_opts = {
 						border = "curved",
 						width = math.floor(vim.o.columns * 0.85),
 						height = math.floor(vim.o.lines * 0.8),
-						winblend = 0, -- ← без прозрачности
+						winblend = 0,
 					},
 				})
-				-- float терминал
 				vim.keymap.set("n", "<leader>tf", "<cmd>ToggleTerm direction=float<cr>", { desc = "terminal (float)" })
 				vim.keymap.set(
 					"n",
@@ -885,7 +866,6 @@ else
 					"<cmd>ToggleTerm direction=vertical size=60<cr>",
 					{ desc = "terminal (vertical)" }
 				)
-				-- выход из terminal mode по Esc
 				vim.keymap.set("t", "<Esc>", [[<C-\><C-n>]], { desc = "exit terminal mode" })
 				vim.keymap.set("t", "<C-h>", [[<C-\><C-n><C-w>h]])
 				vim.keymap.set("t", "<C-l>", [[<C-\><C-n><C-w>l]])
@@ -896,29 +876,136 @@ else
 
 		-- ─── dashboard (стартовый экран) ─────────────────────────────────────
 		{
-			"nvimdev/dashboard-nvim",
+			"goolord/alpha-nvim",
 			event = "VimEnter",
 			dependencies = { "nvim-tree/nvim-web-devicons" },
 			config = function()
-				require("dashboard").setup({
-					theme = "hyper",
-					config = {
-						week_header = { enable = true },
-						shortcut = {
-							{ desc = "  Find File", key = "f", action = "Telescope find_files", group = "Label" },
-							{ desc = "  Recent", key = "r", action = "Telescope oldfiles", group = "Label" },
-							{ desc = "  Grep", key = "g", action = "Telescope live_grep", group = "Label" },
-							{
-								desc = "  Config",
-								key = "c",
-								action = "edit " .. vim.fn.stdpath("config") .. "/init.lua",
-								group = "Label",
-							},
-							{ desc = "  Quit", key = "q", action = "qa", group = "Label" },
-						},
-					},
+				local alpha = require("alpha")
+				local dashboard = require("alpha.themes.dashboard")
+
+				-- ─── ASCII header ──────────────────────────────────────────
+				dashboard.section.header.val = {
+					"                                                     ",
+					"  ███╗   ██╗███████╗ ██████╗ ██╗   ██╗██╗███╗   ███╗",
+					"  ████╗  ██║██╔════╝██╔═══██╗██║   ██║██║████╗ ████║",
+					"  ██╔██╗ ██║█████╗  ██║   ██║██║   ██║██║██╔████╔██║",
+					"  ██║╚██╗██║██╔══╝  ██║   ██║╚██╗ ██╔╝██║██║╚██╔╝██║",
+					"  ██║ ╚████║███████╗╚██████╔╝ ╚████╔╝ ██║██║ ╚═╝ ██║",
+					"  ╚═╝  ╚═══╝╚══════╝ ╚═════╝   ╚═══╝  ╚═╝╚═╝     ╚═╝",
+					"                                                     ",
+				}
+
+				-- ─── кнопки ───────────────────────────────────────────────
+				dashboard.section.buttons.val = {
+					dashboard.button("f", "  Find File", "<cmd>Telescope find_files<cr>"),
+					dashboard.button("r", "  Recent Files", "<cmd>Telescope oldfiles<cr>"),
+					dashboard.button("g", "  Live Grep", "<cmd>Telescope live_grep<cr>"),
+					dashboard.button("s", "  Restore Session", "<cmd>lua require('persistence').load()<cr>"),
+					dashboard.button("c", "  Config", "<cmd>edit " .. vim.fn.stdpath("config") .. "/init.lua<cr>"),
+					dashboard.button("p", "  Plugins", "<cmd>Lazy<cr>"),
+					dashboard.button("m", "  Mason", "<cmd>Mason<cr>"),
+					dashboard.button("q", "  Quit", "<cmd>qa<cr>"),
+				}
+
+				-- ─── footer: версия nvim + кол-во плагинов ────────────────
+				dashboard.section.footer.val = (function()
+					local stats = require("lazy").stats()
+					local v = vim.version()
+					return string.format(
+						"  nvim v%d.%d.%d    %d plugins loaded",
+						v.major,
+						v.minor,
+						v.patch,
+						stats.loaded
+					)
+				end)()
+
+				-- ─── хайлайты ─────────────────────────────────────────────
+				dashboard.section.header.opts.hl = "AlphaHeader"
+				dashboard.section.buttons.opts.hl = "AlphaButtons"
+				dashboard.section.footer.opts.hl = "AlphaFooter"
+
+				local function set_alpha_hls()
+					vim.api.nvim_set_hl(0, "AlphaHeader", { fg = "#89b4fa", bold = true })
+					vim.api.nvim_set_hl(0, "AlphaButtons", { fg = "#cdd6f4" })
+					vim.api.nvim_set_hl(0, "AlphaFooter", { fg = "#585b70", italic = true })
+					vim.api.nvim_set_hl(0, "AlphaShortcut", { fg = "#cba6f7", bold = true })
+				end
+				set_alpha_hls()
+				vim.api.nvim_create_autocmd("ColorScheme", { callback = set_alpha_hls })
+
+				-- ─── layout ───────────────────────────────────────────────
+				dashboard.opts.layout = {
+					{ type = "padding", val = 4 },
+					dashboard.section.header,
+					{ type = "padding", val = 2 },
+					dashboard.section.buttons,
+					{ type = "padding", val = 2 },
+					dashboard.section.footer,
+				}
+
+				dashboard.opts.opts.noautocmd = true
+				alpha.setup(dashboard.opts)
+
+				-- переоткрывать alpha при закрытии последнего буфера
+				vim.api.nvim_create_autocmd("BufDelete", {
+					callback = function()
+						local bufs = vim.fn.getbufinfo({ buflisted = true })
+						if #bufs == 0 then
+							alpha.start(true)
+						end
+					end,
+				})
+
+				-- скрывать tabline/statusline на экране alpha
+				vim.api.nvim_create_autocmd("User", {
+					pattern = "AlphaReady",
+					callback = function()
+						vim.opt_local.showtabline = 0
+						vim.opt_local.laststatus = 0
+						vim.api.nvim_create_autocmd("BufUnload", {
+							buffer = 0,
+							callback = function()
+								vim.opt.showtabline = 2
+								vim.opt.laststatus = 2
+							end,
+						})
+					end,
 				})
 			end,
+		},
+
+		-- ─── session management (для кнопки Restore Session) ─────────────────
+		{
+			"folke/persistence.nvim",
+			event = "BufReadPre",
+			opts = {
+				dir = vim.fn.stdpath("state") .. "/sessions/",
+				options = { "buffers", "curdir", "tabpages", "winsize" },
+			},
+			keys = {
+				{
+					"<leader>qs",
+					function()
+						require("persistence").load()
+					end,
+					desc = "restore session (cwd)",
+				},
+				{
+					"<leader>ql",
+					function()
+						require("persistence").load({ last = true })
+					end,
+					desc = "restore last session",
+				},
+				{
+					"<leader>qd",
+					function()
+						require("persistence").stop()
+					end,
+					desc = "don't save session on exit",
+				},
+			},
 		},
 
 		-- ─── markdown рендер (прямо в буфере) ───────────────────────────────
@@ -932,12 +1019,11 @@ else
 			opts = {
 				heading = {
 					enabled = true,
-					-- уровни заголовков визуально отличаются размером/цветом
 					signs = { "󰫎 " },
 				},
 				code = {
 					enabled = true,
-					style = "full", -- рамка вокруг code block
+					style = "full",
 					width = "block",
 				},
 				bullet = { enabled = true },
@@ -947,7 +1033,7 @@ else
 					checked = { icon = "󰱒 " },
 				},
 				table = { enabled = true },
-				latex = { enabled = false }, -- включить если нужен latex
+				latex = { enabled = false },
 			},
 		},
 
@@ -1000,12 +1086,12 @@ else
 				"nvim-tree/nvim-web-devicons",
 			},
 			opts = {
-				attach_navic = true, -- автоматически подключать к LSP
+				attach_navic = true,
 				show_dirname = false,
 				show_basename = true,
 				theme = "catppuccin-mocha",
-				-- исключить некоторые filetypes
-				exclude_filetypes = { "neo-tree", "toggleterm", "dashboard" },
+				-- "dashboard" заменено на "alpha"
+				exclude_filetypes = { "neo-tree", "toggleterm", "alpha" },
 			},
 		},
 
@@ -1026,11 +1112,9 @@ else
 				}
 
 				hooks.register(hooks.type.HIGHLIGHT_SETUP, function()
-					-- все уровни — приглушённый цвет
 					for _, hl in ipairs(indent_hls) do
 						vim.api.nvim_set_hl(0, hl, { fg = "#313244" })
 					end
-					-- активный (ближайший к курсору) блок — яркий
 					vim.api.nvim_set_hl(0, "IblScope", { fg = "#89b4fa" })
 				end)
 
@@ -1082,7 +1166,8 @@ else
 						},
 					},
 					exclude = {
-						filetypes = { "dashboard", "neo-tree", "toggleterm", "help", "lazy", "mason" },
+						-- "dashboard" заменено на "alpha"
+						filetypes = { "alpha", "neo-tree", "toggleterm", "help", "lazy", "mason" },
 					},
 				})
 			end,
