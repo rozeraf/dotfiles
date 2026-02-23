@@ -1,6 +1,6 @@
 -- init.lua
 
--- ─── Lazy.nvim bootstrap ───────────────────────────────────────────────────
+-- ─── lazy.nvim bootstrap ───────────────────────────────────────────────────
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
 	vim.fn.system({
@@ -14,7 +14,7 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
--- ─── Общие настройки (работают везде) ─────────────────────────────────────
+-- ─── общие настройки (работают везде) ─────────────────────────────────────
 vim.opt.number = true
 vim.opt.hlsearch = true
 vim.opt.incsearch = true
@@ -28,27 +28,28 @@ vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 vim.keymap.set({ "n", "v" }, "<leader>y", '"+y')
 vim.keymap.set({ "n", "v" }, "<leader>p", '"+p')
--- d/x удаляют в никуда, кроме terminal-буферов (modifiable=false)
-vim.keymap.set({ "n", "v" }, "d", function()
-	return vim.bo.buftype == "terminal" and "d" or '"_d'
-end, { expr = true })
-vim.keymap.set("n", "dd", function()
-	return vim.bo.buftype == "terminal" and "dd" or '"_dd'
-end, { expr = true })
+-- d/x удаляют в никуда (кроме terminal/prompt)
+local function safe_del(key)
+	return function()
+		if vim.bo.buftype == "terminal" or vim.bo.buftype == "prompt" then
+			return key
+		end
+		return '"_' .. key
+	end
+end
 
--- x тоже
-vim.keymap.set({ "n", "v" }, "x", function()
-	return vim.bo.buftype == "terminal" and "x" or '"_x'
-end, { expr = true })
+vim.keymap.set({ "n", "v" }, "d", safe_del("d"), { expr = true })
+vim.keymap.set("n", "dd", safe_del("dd"), { expr = true })
+vim.keymap.set({ "n", "v" }, "x", safe_del("x"), { expr = true })
 
--- leader+d — явное вырезание (в буфер обмена)
+-- leader+d — явное вырезание в буфер обмена
 vim.keymap.set({ "n", "v" }, "<leader>d", '"+d')
 vim.keymap.set("n", "<leader>dd", '"+dd')
 
 -- leader+xa - сохранить и выйти из всех буферов
-vim.keymap.set("n", "<leader>xa", "<cmd>wa<cr><cmd>qa<cr>", { desc = "Save all and quit" })
+vim.keymap.set("n", "<leader>xa", "<cmd>wa<cr><cmd>qa<cr>", { desc = "save all and quit" })
 
--- ─── VSCode ────────────────────────────────────────────────────────────────
+-- ─── vscode ────────────────────────────────────────────────────────────────
 if vim.g.vscode then
 	require("lazy").setup({
 		{ "nvim-lua/plenary.nvim" },
@@ -58,7 +59,7 @@ if vim.g.vscode then
 		{ "tpope/vim-commentary" },
 		{ "wellle/targets.vim" },
 		{
-			"RRethy/vim-illuminate",
+			"rrethy/vim-illuminate",
 			config = function()
 				require("illuminate").configure({
 					delay = 100,
@@ -69,9 +70,9 @@ if vim.g.vscode then
 		{
 			url = "https://codeberg.org/andyg/leap.nvim",
 			config = function()
-				vim.keymap.set({ "n", "x", "o" }, "s", "<Plug>(leap-forward)")
-				vim.keymap.set({ "n", "x", "o" }, "S", "<Plug>(leap-backward)")
-				vim.keymap.set({ "n", "x", "o" }, "gs", "<Plug>(leap-from-window)")
+				vim.keymap.set({ "n", "x", "o" }, "s", "<plug>(leap-forward)")
+				vim.keymap.set({ "n", "x", "o" }, "s", "<plug>(leap-backward)")
+				vim.keymap.set({ "n", "x", "o" }, "gs", "<plug>(leap-from-window)")
 			end,
 		},
 
@@ -94,7 +95,7 @@ if vim.g.vscode then
 
 		{
 			"nvim-treesitter/nvim-treesitter",
-			build = ":TSUpdate",
+			build = ":tsupdate",
 			main = "nvim-treesitter.config",
 			opts = {
 				ensure_installed = { "lua", "python", "javascript", "typescript", "rust" },
@@ -104,27 +105,73 @@ if vim.g.vscode then
 		},
 	})
 
--- ─── Обычный Neovim ────────────────────────────────────────────────────────
+-- ─── обычный neovim ────────────────────────────────────────────────────────
 else
-	vim.opt.relativenumber = false
+	vim.opt.relativenumber = true
+
+	vim.opt.number = true
 	vim.cmd("syntax on")
 
 	vim.cmd([[
-    hi Normal       guibg=NONE ctermbg=NONE
-    hi NormalNC     guibg=NONE ctermbg=NONE
-    hi EndOfBuffer  guibg=NONE ctermbg=NONE
-    hi LineNr       guibg=NONE ctermbg=NONE
-    hi SignColumn   guibg=NONE ctermbg=NONE
+    hi normal       guibg=none ctermbg=none
+    hi normalnc     guibg=none ctermbg=none
+    hi endofbuffer  guibg=none ctermbg=none
+    hi linenr       guibg=none ctermbg=none
+    hi signcolumn   guibg=none ctermbg=none
   ]])
+	-- toggleterm
+	vim.api.nvim_set_hl(0, "ToggleTerm1Normal", { bg = "#1a1a2e" })
+	vim.api.nvim_set_hl(0, "ToggleTermNormal", { bg = "#1a1a2e" })
+	vim.api.nvim_set_hl(0, "TerminalBackground", { bg = "#1a1a2e" })
 
-	vim.keymap.set("i", "(", "()<Left>")
-	vim.keymap.set("i", "[", "[]<Left>")
-	vim.keymap.set("i", "{", "{}<Left>")
-	vim.keymap.set("i", '"', '""<Left>')
-	vim.keymap.set("i", "'", "''<Left>")
-
-	-- LSP keymaps (применяются при attach)
-	vim.api.nvim_create_autocmd("LspAttach", {
+	-- cmp (автодополнение)
+	vim.api.nvim_set_hl(0, "CmpNormal", { bg = "#1e1e30" })
+	vim.api.nvim_set_hl(0, "CmpBorder", { fg = "#45475a", bg = "#1e1e30" })
+	vim.api.nvim_set_hl(0, "CmpDocNormal", { bg = "#252535" })
+	vim.api.nvim_set_hl(0, "CmpDocBorder", { fg = "#45475a", bg = "#252535" })
+	vim.api.nvim_set_hl(0, "CmpItemAbbrMatch", { fg = "#89b4fa", bold = true })
+	vim.api.nvim_set_hl(0, "CmpItemAbbrMatchFuzzy", { fg = "#89dceb", bold = true })
+	vim.api.nvim_set_hl(0, "CmpItemKindDefault", { fg = "#cba6f7" })
+	-- TabLine уголки (рисуются поверх bufferline)
+	local function fix_tabline_hl()
+		vim.api.nvim_set_hl(0, "TabLineFill", { bg = "#1e1e2e", fg = "#1e1e2e" })
+		vim.api.nvim_set_hl(0, "TabLine", { bg = "#1e1e2e", fg = "#585b70" })
+	end
+	fix_tabline_hl()
+	vim.api.nvim_create_autocmd("ColorScheme", {
+		callback = function()
+			fix_tabline_hl()
+			-- cmp
+			vim.api.nvim_set_hl(0, "CmpNormal", { bg = "#1e1e30" })
+			vim.api.nvim_set_hl(0, "CmpBorder", { fg = "#45475a", bg = "#1e1e30" })
+			vim.api.nvim_set_hl(0, "CmpDocNormal", { bg = "#252535" })
+			vim.api.nvim_set_hl(0, "CmpDocBorder", { fg = "#45475a", bg = "#252535" })
+			-- float
+			vim.api.nvim_set_hl(0, "NormalFloat", { fg = "#cdd6f4", bg = "#252535" })
+			vim.api.nvim_set_hl(0, "FloatBorder", { fg = "#45475a", bg = "#252535" })
+		end,
+	})
+	-- floating-окна не должны быть прозрачными
+	local float_bg = "#252535"
+	local float_border = "#45475a"
+	vim.api.nvim_set_hl(0, "NormalFloat", { fg = "#cdd6f4", bg = float_bg })
+	vim.api.nvim_set_hl(0, "FloatBorder", { fg = float_border, bg = float_bg })
+	vim.api.nvim_set_hl(0, "Pmenu", { fg = "#cdd6f4", bg = float_bg })
+	vim.api.nvim_set_hl(0, "PmenuSel", { fg = "#1e1e2e", bg = "#89b4fa", bold = true })
+	vim.api.nvim_set_hl(0, "PmenuSbar", { bg = "#313244" })
+	vim.api.nvim_set_hl(0, "PmenuThumb", { bg = "#585b70" })
+	-- telescope
+	vim.api.nvim_set_hl(0, "TelescopeNormal", { bg = float_bg })
+	vim.api.nvim_set_hl(0, "TelescopeBorder", { fg = float_border, bg = float_bg })
+	vim.api.nvim_set_hl(0, "TelescopePromptNormal", { bg = "#2a2a3d" })
+	vim.api.nvim_set_hl(0, "TelescopePromptBorder", { fg = float_border, bg = "#2a2a3d" })
+	vim.api.nvim_set_hl(0, "TelescopeResultsTitle", { fg = float_border, bg = float_bg })
+	vim.api.nvim_set_hl(0, "TelescopePreviewTitle", { fg = float_border, bg = float_bg })
+	-- noice
+	vim.api.nvim_set_hl(0, "NoiceCmdlinePopup", { bg = float_bg })
+	vim.api.nvim_set_hl(0, "NoiceCmdlinePopupBorder", { fg = float_border, bg = float_bg })
+	-- lsp keymaps (применяются при attach)
+	vim.api.nvim_create_autocmd("lspattach", {
 		callback = function(event)
 			local opts = { buffer = event.buf }
 			vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
@@ -140,20 +187,19 @@ else
 		end,
 	})
 
-	-- Диагностика: иконки в gutter
+	-- диагностика: иконки в gutter
+	local signs = { Error = "", Warn = "", Info = "", Hint = "" }
+	for type, icon in pairs(signs) do
+		local hl = "DiagnosticSign" .. type
+		vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
+	end
+
 	vim.diagnostic.config({
-		signs = {
-			text = {
-				[vim.diagnostic.severity.ERROR] = "",
-				[vim.diagnostic.severity.WARN] = "",
-				[vim.diagnostic.severity.INFO] = "",
-				[vim.diagnostic.severity.HINT] = "",
-			},
-		},
 		virtual_text = true,
 		update_in_insert = false,
 		underline = true,
 		severity_sort = true,
+		signs = true,
 	})
 
 	require("lazy").setup({
@@ -167,9 +213,9 @@ else
 		{
 			url = "https://codeberg.org/andyg/leap.nvim",
 			config = function()
-				vim.keymap.set({ "n", "x", "o" }, "s", "<Plug>(leap-forward)")
-				vim.keymap.set({ "n", "x", "o" }, "S", "<Plug>(leap-backward)")
-				vim.keymap.set({ "n", "x", "o" }, "gs", "<Plug>(leap-from-window)")
+				vim.keymap.set({ "n", "x", "o" }, "s", "<plug>(leap-forward)")
+				vim.keymap.set({ "n", "x", "o" }, "s", "<plug>(leap-backward)")
+				vim.keymap.set({ "n", "x", "o" }, "gs", "<plug>(leap-from-window)")
 			end,
 		},
 
@@ -202,7 +248,7 @@ else
 		{
 			"folke/noice.nvim",
 			event = "VeryLazy",
-			dependencies = { "MunifTanjim/nui.nvim" },
+			dependencies = { "muniftanjim/nui.nvim" },
 			opts = {
 				cmdline = { view = "cmdline" },
 				lsp = {
@@ -234,16 +280,17 @@ else
 		},
 
 		{ "tpope/vim-fugitive" },
+
 		{
 			"nvim-neo-tree/neo-tree.nvim",
 			branch = "v3.x",
 			dependencies = {
 				"nvim-lua/plenary.nvim",
 				"nvim-tree/nvim-web-devicons",
-				"MunifTanjim/nui.nvim",
+				"muniftanjim/nui.nvim",
 			},
 			keys = {
-				{ "<leader>e", "<cmd>Neotree toggle<cr>", desc = "Toggle file tree" },
+				{ "<leader>e", "<cmd>Neotree toggle<cr>", desc = "toggle file tree" },
 			},
 			opts = {
 				window = {
@@ -265,7 +312,8 @@ else
 				},
 			},
 		},
-		-- Диагностика по всему проекту
+
+		-- ─── диагностика по всему проекту ───────────────────────────────────
 		{
 			"folke/trouble.nvim",
 			dependencies = { "nvim-tree/nvim-web-devicons" },
@@ -275,16 +323,16 @@ else
 					"n",
 					"<leader>xx",
 					"<cmd>Trouble diagnostics toggle<cr>",
-					{ desc = "Diagnostics (project)" }
+					{ desc = "diagnostics (project)" }
 				)
 				vim.keymap.set(
 					"n",
 					"<leader>xb",
 					"<cmd>Trouble diagnostics toggle filter.buf=0<cr>",
-					{ desc = "Diagnostics (buffer)" }
+					{ desc = "diagnostics (buffer)" }
 				)
-				vim.keymap.set("n", "<leader>xs", "<cmd>Trouble symbols toggle<cr>", { desc = "Symbols" })
-				vim.keymap.set("n", "<leader>xr", "<cmd>Trouble lsp_references toggle<cr>", { desc = "LSP References" })
+				vim.keymap.set("n", "<leader>xs", "<cmd>Trouble symbols toggle<cr>", { desc = "symbols" })
+				vim.keymap.set("n", "<leader>xr", "<cmd>Trouble lsp_references toggle<cr>", { desc = "lsp references" })
 			end,
 		},
 
@@ -315,13 +363,13 @@ else
 					float = { padding = 2, max_width = 80, max_height = 30 },
 					keymaps = {
 						["g?"] = "actions.show_help",
-						["<CR>"] = "actions.select",
-						["<C-v>"] = { "actions.select", opts = { vertical = true } },
-						["<C-s>"] = { "actions.select", opts = { horizontal = true } },
-						["<C-t>"] = { "actions.select", opts = { tab = true } },
-						["<C-p>"] = "actions.preview",
-						["<C-c>"] = "actions.close",
-						["<C-r>"] = "actions.refresh",
+						["<cr>"] = "actions.select",
+						["<c-v>"] = { "actions.select", opts = { vertical = true } },
+						["<c-s>"] = { "actions.select", opts = { horizontal = true } },
+						["<c-t>"] = { "actions.select", opts = { tab = true } },
+						["<c-p>"] = "actions.preview",
+						["<c-c>"] = "actions.close",
+						["<c-r>"] = "actions.refresh",
 						["-"] = "actions.parent",
 						["_"] = "actions.open_cwd",
 						["`"] = "actions.cd",
@@ -334,51 +382,80 @@ else
 					},
 					use_default_keymaps = false,
 				})
-				vim.keymap.set("n", "-", "<CMD>Oil<CR>", { desc = "Open parent directory (oil)" })
+				vim.keymap.set("n", "-", "<cmd>Oil<cr>", { desc = "open parent directory (oil)" })
 			end,
 		},
 
 		{
-			"MagicDuck/grug-far.nvim",
+			"magicduck/grug-far.nvim",
 			config = function()
 				require("grug-far").setup({
-					windowCreationCommand = "vsplit",
-					extraRgArgs = "",
-					resultsSeparatorLineChar = "─",
+					windowcreationcommand = "vsplit",
+					extrargargs = "",
+					resultsseparatorlinechar = "─",
 				})
 				vim.keymap.set("n", "<leader>sr", function()
 					require("grug-far").open({ prefills = { search = vim.fn.expand("<cword>") } })
-				end, { desc = "Search and replace (word under cursor)" })
-				vim.keymap.set("n", "<leader>sR", function()
-					require("grug-far").open()
-				end, { desc = "Search and replace (empty)" })
+				end, { desc = "search and replace (word under cursor)" })
 				vim.keymap.set("v", "<leader>sr", function()
 					require("grug-far").with_visual_selection()
-				end, { desc = "Search and replace (selection)" })
+				end, { desc = "search and replace (selection)" })
 			end,
 		},
 
 		{
 			"nvim-treesitter/nvim-treesitter",
-			build = ":TSUpdate",
+			build = ":tsupdate",
 			lazy = false,
 			config = function()
 				require("nvim-treesitter.config").setup({
-					ensure_installed = { "lua", "python", "javascript", "typescript", "tsx", "rust" },
+					ensure_installed = {
+						"lua",
+						"python",
+						"javascript",
+						"typescript",
+						"tsx",
+						"rust",
+						"html",
+						"css",
+						"markdown",
+						"markdown_inline",
+					},
 					highlight = { enable = true },
 					indent = { enable = true },
 				})
 			end,
 		},
 
-		-- Автодополнение
+		-- ─── autopairs (умнее ручных биндов) ────────────────────────────────
+		-- ВНИМАНИЕ: убраны ручные биндинги (, [, {, ", ' из insert mode —
+		-- autopairs их полностью заменяет с учётом treesitter-контекста
+		{
+			"windwp/nvim-autopairs",
+			event = "InsertEnter",
+			config = function()
+				require("nvim-autopairs").setup({
+					check_ts = true,
+					ts_config = {
+						lua = { "string" },
+						javascript = { "template_string" },
+						typescript = { "template_string" },
+					},
+				})
+				-- интеграция с cmp: скобка добавляется после confirm
+				local cmp_autopairs = require("nvim-autopairs.completion.cmp")
+				require("cmp").event:on("confirm_done", cmp_autopairs.on_confirm_done())
+			end,
+		},
+
+		-- ─── автодополнение ─────────────────────────────────────────────────
 		{
 			"hrsh7th/nvim-cmp",
 			dependencies = {
 				"hrsh7th/cmp-nvim-lsp",
 				"hrsh7th/cmp-buffer",
 				"hrsh7th/cmp-path",
-				"L3MON4D3/LuaSnip",
+				"l3mon4d3/luasnip",
 				"saadparwaiz1/cmp_luasnip",
 				"rafamadriz/friendly-snippets",
 			},
@@ -394,10 +471,18 @@ else
 							luasnip.lsp_expand(args.body)
 						end,
 					},
+					window = {
+						completion = cmp.config.window.bordered({
+							winhighlight = "Normal:CmpNormal,FloatBorder:CmpBorder,CursorLine:PmenuSel",
+						}),
+						documentation = cmp.config.window.bordered({
+							winhighlight = "Normal:CmpDocNormal,FloatBorder:CmpDocBorder",
+						}),
+					},
 					mapping = cmp.mapping.preset.insert({
-						["<C-Space>"] = cmp.mapping.complete(),
-						["<CR>"] = cmp.mapping.confirm({ select = true }),
-						["<Tab>"] = cmp.mapping(function(fallback)
+						["<c-space>"] = cmp.mapping.complete(),
+						["<cr>"] = cmp.mapping.confirm({ select = true }),
+						["<tab>"] = cmp.mapping(function(fallback)
 							if cmp.visible() then
 								cmp.select_next_item()
 							elseif luasnip.expand_or_jumpable() then
@@ -406,7 +491,7 @@ else
 								fallback()
 							end
 						end, { "i", "s" }),
-						["<S-Tab>"] = cmp.mapping(function(fallback)
+						["<s-tab>"] = cmp.mapping(function(fallback)
 							if cmp.visible() then
 								cmp.select_prev_item()
 							elseif luasnip.jumpable(-1) then
@@ -415,22 +500,81 @@ else
 								fallback()
 							end
 						end, { "i", "s" }),
-						["<C-e>"] = cmp.mapping.abort(),
-						["<C-u>"] = cmp.mapping.scroll_docs(-4),
-						["<C-d>"] = cmp.mapping.scroll_docs(4),
+						["<c-e>"] = cmp.mapping.abort(),
+						["<c-u>"] = cmp.mapping.scroll_docs(-4),
+						["<c-d>"] = cmp.mapping.scroll_docs(4),
 					}),
 					sources = cmp.config.sources({
 						{ name = "nvim_lsp" },
+						{ name = "codeium" },
 						{ name = "luasnip" },
 						{ name = "path" },
 					}, {
 						{ name = "buffer" },
 					}),
+					-- внешний вид: тип источника и иконка
+					formatting = {
+						format = function(entry, item)
+							local kind_icons = {
+								Text = "",
+								Method = "󰆧",
+								Function = "󰊕",
+								Constructor = "",
+								Field = "󰇽",
+								Variable = "󰂡",
+								Class = "󰠱",
+								Interface = "",
+								Module = "",
+								Property = "󰜢",
+								Unit = "",
+								Value = "󰎠",
+								Enum = "",
+								Keyword = "󰌋",
+								Snippet = "",
+								Color = "󰏘",
+								File = "󰈙",
+								Reference = "",
+								Folder = "󰉋",
+								EnumMember = "",
+								Constant = "󰏿",
+								Struct = "",
+								Event = "",
+								Operator = "󰆕",
+								TypeParameter = "󰅲",
+							}
+							item.kind = string.format("%s %s", kind_icons[item.kind] or "", item.kind)
+							item.menu = ({
+								nvim_lsp = "[LSP]",
+								codeium = "[AI]",
+								luasnip = "[Snip]",
+								buffer = "[Buf]",
+								path = "[Path]",
+							})[entry.source.name]
+							return item
+						end,
+					},
 				})
 			end,
 		},
 
-		-- Линтинг (eslint и др. — не через LSP)
+		-- ─── AI автодополнение (Codeium) ─────────────────────────────────────
+		-- Бесплатный без ограничений, ghost-text инлайн.
+		-- При первом запуске выполни :Codeium Auth
+		-- Принять: <C-l>, отклонить: <C-]>, принять слово: <C-j>
+		{
+			"Exafunction/codeium.nvim",
+			dependencies = {
+				"nvim-lua/plenary.nvim",
+				"hrsh7th/nvim-cmp",
+			},
+			config = function()
+				require("codeium").setup({
+					enable_chat = false,
+				})
+			end,
+		},
+
+		-- ─── линтинг ────────────────────────────────────────────────────────
 		{
 			"mfussenegger/nvim-lint",
 			config = function()
@@ -441,7 +585,7 @@ else
 					javascriptreact = { "eslint_d" },
 					typescriptreact = { "eslint_d" },
 				}
-				vim.api.nvim_create_autocmd({ "BufWritePost", "BufReadPost", "InsertLeave" }, {
+				vim.api.nvim_create_autocmd({ "bufwritepost", "bufreadpost", "insertleave" }, {
 					callback = function()
 						lint.try_lint()
 					end,
@@ -474,14 +618,22 @@ else
 			end,
 		},
 
-		-- ─── Mason + LSP ────────────────────────────────────────────────────
+		-- ─── mason + lsp ────────────────────────────────────────────────────
 		{
 			"williamboman/mason.nvim",
 			config = function()
 				require("mason").setup()
-				-- форматтеры и линтеры (не LSP-серверы)
 				local mr = require("mason-registry")
-				for _, tool in ipairs({ "prettier", "stylua", "black", "eslint_d", "ruff", "clang-format" }) do
+				for _, tool in ipairs({
+					"prettier",
+					"stylua",
+					"black",
+					"eslint_d",
+					"ruff",
+					"clang-format",
+					-- добавлены emmet и markdown lsp
+					"emmet-language-server",
+				}) do
 					local ok, p = pcall(mr.get_package, tool)
 					if ok and not p:is_installed() then
 						p:install()
@@ -495,7 +647,7 @@ else
 			dependencies = { "williamboman/mason.nvim" },
 			config = function()
 				require("mason-lspconfig").setup({
-					ensure_installed = { "lua_ls", "pyright", "ts_ls", "clangd" },
+					ensure_installed = { "lua_ls", "pyright", "ts_ls", "clangd", "emmet_language_server", "marksman" },
 					automatic_enable = true,
 				})
 			end,
@@ -510,19 +662,20 @@ else
 			config = function()
 				local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
-				-- capabilities для всех серверов
 				vim.lsp.config("*", { capabilities = capabilities })
+
 				vim.lsp.config("clangd", {
 					cmd = { "clangd", "--background-index", "--clang-tidy" },
 				})
+
 				vim.lsp.config("lua_ls", {
 					settings = {
-						Lua = {
+						lua = {
 							diagnostics = { globals = { "vim" } },
 							workspace = {
-								checkThirdParty = false,
+								checkthirdparty = false,
 								library = {
-									vim.fn.expand("$VIMRUNTIME/lua"),
+									vim.fn.expand("$vimruntime/lua"),
 									vim.fn.stdpath("data") .. "/lazy",
 								},
 							},
@@ -535,98 +688,62 @@ else
 
 				vim.lsp.config("ts_ls", {
 					init_options = {
-						preferences = { importModuleSpecifierPreference = "relative" },
+						preferences = {
+							importModuleSpecifierPreference = "relative",
+						},
+						maxTsServerMemory = 4096,
 					},
-				})
-			end,
-		},
-		{
-			"akinsho/bufferline.nvim",
-			version = "*",
-			dependencies = { "nvim-tree/nvim-web-devicons" },
-			config = function()
-				local mocha = require("catppuccin.palettes").get_palette("mocha")
-
-				require("bufferline").setup({
-					highlights = require("catppuccin.groups.integrations.bufferline").get({
-						styles = { "italic", "bold" },
-						custom = {
-							mocha = {
-								background = { bg = "NONE" },
-								fill = { bg = "NONE" },
-								tab = { bg = "NONE" },
-								tab_close = { bg = "NONE" },
-								close_button = { bg = "NONE" },
-								separator = { bg = "NONE", fg = mocha.surface1 },
-								separator_visible = { bg = "NONE", fg = mocha.surface1 },
-								separator_selected = { bg = "NONE", fg = mocha.surface1 },
-								indicator_selected = { fg = mocha.mauve, bg = "NONE" },
-								buffer_selected = { bg = "NONE", bold = true, italic = false },
-								buffer_visible = { bg = "NONE" },
-								numbers_selected = { bg = "NONE" },
-								numbers_visible = { bg = "NONE" },
-								numbers = { bg = "NONE" },
-								duplicate_selected = { bg = "NONE" },
-								duplicate_visible = { bg = "NONE" },
-								duplicate = { bg = "NONE" },
-								modified = { bg = "NONE" },
-								modified_visible = { bg = "NONE" },
-								modified_selected = { bg = "NONE" },
+					settings = {
+						typescript = {
+							tsserver = {
+								experimental = {
+									enableProjectDiagnostics = true,
+								},
 							},
 						},
-					}),
-					options = {
-						mode = "buffers",
-						style_preset = require("bufferline").style_preset.minimal,
-						separator_style = "thin",
-						indicator = { style = "underline" },
-						show_buffer_close_icons = true,
-						show_close_icon = false,
-						color_icons = true,
-						diagnostics = "nvim_lsp",
-						diagnostics_indicator = function(_, _, diag)
-							local icons = { error = " ", warning = " " }
-							local s = {}
-							for k, n in pairs(diag) do
-								if icons[k] then
-									s[#s + 1] = icons[k] .. n
-								end
-							end
-							return table.concat(s, " ")
-						end,
-						offsets = {
-							{
-								filetype = "neo-tree",
-								text = "",
-								highlight = "Directory",
-								separator = false,
+						javascript = {
+							tsserver = {
+								experimental = {
+									enableProjectDiagnostics = true,
+								},
 							},
 						},
 					},
 				})
 
-				vim.keymap.set("n", "<S-l>", "<cmd>BufferLineCycleNext<cr>", { desc = "Next buffer" })
-				vim.keymap.set("n", "<S-h>", "<cmd>BufferLineCyclePrev<cr>", { desc = "Prev buffer" })
-				vim.keymap.set("n", "<leader>bd", "<cmd>bdelete<cr>", { desc = "Delete buffer" })
-				vim.keymap.set("n", "<leader>bp", "<cmd>BufferLinePick<cr>", { desc = "Pick buffer" })
+				-- emmet: html/css/jsx/tsx
+				vim.lsp.config("emmet_language_server", {
+					filetypes = {
+						"html",
+						"css",
+						"scss",
+						"javascript",
+						"javascriptreact",
+						"typescript",
+						"typescriptreact",
+					},
+				})
+
+				-- marksman: markdown LSP (go-to, references, completions)
+				vim.lsp.config("marksman", {})
 			end,
 		},
 
-		-- ─── Git ────────────────────────────────────────────────────────────
+		-- ─── git ────────────────────────────────────────────────────────────
 		{
 			"sindrets/diffview.nvim",
 			dependencies = { "nvim-tree/nvim-web-devicons" },
 			cmd = { "DiffviewOpen", "DiffviewFileHistory" },
 			keys = {
-				{ "<leader>gd", "<cmd>DiffviewOpen<cr>", desc = "Diffview (working tree)" },
-				{ "<leader>gh", "<cmd>DiffviewFileHistory %<cr>", desc = "Diffview (file history)" },
-				{ "<leader>gH", "<cmd>DiffviewFileHistory<cr>", desc = "Diffview (repo history)" },
-				{ "<leader>gq", "<cmd>DiffviewClose<cr>", desc = "Diffview close" },
+				{ "<leader>gd", "<cmd>DiffviewOpen<cr>", desc = "diffview (working tree)" },
+				{ "<leader>gh", "<cmd>DiffviewFileHistory %<cr>", desc = "diffview (file history)" },
+				{ "<leader>gH", "<cmd>DiffviewFileHistory<cr>", desc = "diffview (repo history)" },
+				{ "<leader>gq", "<cmd>DiffviewClose<cr>", desc = "diffview close" },
 			},
 		},
 
 		{
-			"NeogitOrg/neogit",
+			"neogitorg/neogit",
 			dependencies = {
 				"nvim-lua/plenary.nvim",
 				"sindrets/diffview.nvim",
@@ -634,7 +751,7 @@ else
 			},
 			cmd = "Neogit",
 			keys = {
-				{ "<leader>gg", "<cmd>Neogit<cr>", desc = "Neogit" },
+				{ "<leader>gg", "<cmd>Neogit<cr>", desc = "neogit" },
 			},
 			opts = {
 				integrations = {
@@ -645,7 +762,7 @@ else
 		},
 
 		{
-			"RRethy/vim-illuminate",
+			"rrethy/vim-illuminate",
 			config = function()
 				require("illuminate").configure({
 					delay = 100,
@@ -654,6 +771,7 @@ else
 			end,
 		},
 
+		-- ─── statusline ─────────────────────────────────────────────────────
 		{
 			"nvim-lualine/lualine.nvim",
 			dependencies = { "nvim-tree/nvim-web-devicons" },
@@ -669,6 +787,302 @@ else
 								symbols = { error = " ", warn = " ", info = " ", hint = " " },
 							},
 						},
+					},
+				})
+			end,
+		},
+
+		-- ─── bufferline (вкладки файлов) ────────────────────────────────────
+		{
+			"akinsho/bufferline.nvim",
+			version = "*",
+			dependencies = { "nvim-tree/nvim-web-devicons" },
+			config = function()
+				require("bufferline").setup({
+					options = {
+						mode = "buffers",
+						separator_style = "slant",
+						diagnostics = "nvim_lsp",
+						diagnostics_indicator = function(_, _, diag)
+							local s = ""
+							if diag.error then
+								s = s .. " " .. diag.error
+							end
+							if diag.warning then
+								s = s .. " " .. diag.warning
+							end
+							return s
+						end,
+						offsets = {
+							{
+								filetype = "neo-tree",
+								text = "File Explorer",
+								highlight = "Directory",
+								separator = true,
+							},
+						},
+						show_buffer_close_icons = true,
+						show_close_icon = false,
+						color_icons = true,
+					},
+				})
+				-- навигация между буферами
+				vim.keymap.set("n", "<S-l>", "<cmd>BufferLineCycleNext<cr>", { desc = "next buffer" })
+				vim.keymap.set("n", "<S-h>", "<cmd>BufferLineCyclePrev<cr>", { desc = "prev buffer" })
+				vim.keymap.set("n", "<leader>bd", "<cmd>bdelete<cr>", { desc = "close buffer" })
+				vim.keymap.set("n", "<leader>bp", "<cmd>BufferLineTogglePin<cr>", { desc = "pin buffer" })
+				-- прыжок по номеру (1-9)
+				for i = 1, 9 do
+					vim.keymap.set("n", "<leader>" .. i, function()
+						require("bufferline").go_to(i, true)
+					end, { desc = "buffer " .. i })
+				end
+			end,
+		},
+
+		-- ─── встроенный терминал ─────────────────────────────────────────────
+		{
+			"akinsho/toggleterm.nvim",
+			version = "*",
+			config = function()
+				require("toggleterm").setup({
+					size = 15,
+					open_mapping = [[<C-`>]],
+					direction = "horizontal",
+					shade_terminals = false, -- ← выключить, иначе перебивает цвет
+					persist_size = true,
+					persist_mode = true,
+					highlights = {
+						Normal = {
+							guibg = "#1a1a2e",
+						},
+						NormalFloat = {
+							guibg = "#1a1a2e",
+						},
+						FloatBorder = {
+							guifg = "#45475a",
+							guibg = "#1a1a2e",
+						},
+					},
+					float_opts = {
+						border = "curved",
+						width = math.floor(vim.o.columns * 0.85),
+						height = math.floor(vim.o.lines * 0.8),
+						winblend = 0, -- ← без прозрачности
+					},
+				})
+				-- float терминал
+				vim.keymap.set("n", "<leader>tf", "<cmd>ToggleTerm direction=float<cr>", { desc = "terminal (float)" })
+				vim.keymap.set(
+					"n",
+					"<leader>th",
+					"<cmd>ToggleTerm direction=horizontal<cr>",
+					{ desc = "terminal (horizontal)" }
+				)
+				vim.keymap.set(
+					"n",
+					"<leader>tv",
+					"<cmd>ToggleTerm direction=vertical size=60<cr>",
+					{ desc = "terminal (vertical)" }
+				)
+				-- выход из terminal mode по Esc
+				vim.keymap.set("t", "<Esc>", [[<C-\><C-n>]], { desc = "exit terminal mode" })
+				vim.keymap.set("t", "<C-h>", [[<C-\><C-n><C-w>h]])
+				vim.keymap.set("t", "<C-l>", [[<C-\><C-n><C-w>l]])
+				vim.keymap.set("t", "<C-j>", [[<C-\><C-n><C-w>j]])
+				vim.keymap.set("t", "<C-k>", [[<C-\><C-n><C-w>k]])
+			end,
+		},
+
+		-- ─── dashboard (стартовый экран) ─────────────────────────────────────
+		{
+			"nvimdev/dashboard-nvim",
+			event = "VimEnter",
+			dependencies = { "nvim-tree/nvim-web-devicons" },
+			config = function()
+				require("dashboard").setup({
+					theme = "hyper",
+					config = {
+						week_header = { enable = true },
+						shortcut = {
+							{ desc = "  Find File", key = "f", action = "Telescope find_files", group = "Label" },
+							{ desc = "  Recent", key = "r", action = "Telescope oldfiles", group = "Label" },
+							{ desc = "  Grep", key = "g", action = "Telescope live_grep", group = "Label" },
+							{
+								desc = "  Config",
+								key = "c",
+								action = "edit " .. vim.fn.stdpath("config") .. "/init.lua",
+								group = "Label",
+							},
+							{ desc = "  Quit", key = "q", action = "qa", group = "Label" },
+						},
+					},
+				})
+			end,
+		},
+
+		-- ─── markdown рендер (прямо в буфере) ───────────────────────────────
+		{
+			"MeanderingProgrammer/render-markdown.nvim",
+			dependencies = {
+				"nvim-treesitter/nvim-treesitter",
+				"nvim-tree/nvim-web-devicons",
+			},
+			ft = { "markdown" },
+			opts = {
+				heading = {
+					enabled = true,
+					-- уровни заголовков визуально отличаются размером/цветом
+					signs = { "󰫎 " },
+				},
+				code = {
+					enabled = true,
+					style = "full", -- рамка вокруг code block
+					width = "block",
+				},
+				bullet = { enabled = true },
+				checkbox = {
+					enabled = true,
+					unchecked = { icon = "󰄱 " },
+					checked = { icon = "󰱒 " },
+				},
+				table = { enabled = true },
+				latex = { enabled = false }, -- включить если нужен latex
+			},
+		},
+
+		-- ─── winbar / хлебные крошки ─────────────────────────────────────────
+		{
+			"SmiteshP/nvim-navic",
+			dependencies = { "neovim/nvim-lspconfig" },
+			config = function()
+				require("nvim-navic").setup({
+					lsp = { auto_attach = true },
+					highlight = true,
+					separator = " › ",
+					depth_limit = 5,
+					icons = {
+						File = "󰈙 ",
+						Module = " ",
+						Namespace = "󰌗 ",
+						Package = " ",
+						Class = "󰠱 ",
+						Method = "󰆧 ",
+						Property = "󰜢 ",
+						Field = "󰇽 ",
+						Constructor = " ",
+						Enum = "󰕘 ",
+						Interface = "󰕘 ",
+						Function = "󰊕 ",
+						Variable = "󰂡 ",
+						Constant = "󰏿 ",
+						String = "󰀬 ",
+						Number = "󰎠 ",
+						Boolean = "◩ ",
+						Array = "󰅪 ",
+						Object = "󰅩 ",
+						Key = "󰌋 ",
+						Null = "󰟢 ",
+						EnumMember = " ",
+						Struct = "󰙅 ",
+						Event = " ",
+						Operator = "󰆕 ",
+						TypeParameter = "󰊄 ",
+					},
+				})
+			end,
+		},
+
+		{
+			"utilyre/barbecue.nvim",
+			dependencies = {
+				"SmiteshP/nvim-navic",
+				"nvim-tree/nvim-web-devicons",
+			},
+			opts = {
+				attach_navic = true, -- автоматически подключать к LSP
+				show_dirname = false,
+				show_basename = true,
+				theme = "catppuccin-mocha",
+				-- исключить некоторые filetypes
+				exclude_filetypes = { "neo-tree", "toggleterm", "dashboard" },
+			},
+		},
+
+		-- ─── отступы (вертикальные линии) ───────────────────────────────────
+		{
+			"lukas-reineke/indent-blankline.nvim",
+			main = "ibl",
+			config = function()
+				local hooks = require("ibl.hooks")
+
+				local indent_hls = {
+					"IblIndent1",
+					"IblIndent2",
+					"IblIndent3",
+					"IblIndent4",
+					"IblIndent5",
+					"IblIndent6",
+				}
+
+				hooks.register(hooks.type.HIGHLIGHT_SETUP, function()
+					-- все уровни — приглушённый цвет
+					for _, hl in ipairs(indent_hls) do
+						vim.api.nvim_set_hl(0, hl, { fg = "#313244" })
+					end
+					-- активный (ближайший к курсору) блок — яркий
+					vim.api.nvim_set_hl(0, "IblScope", { fg = "#89b4fa" })
+				end)
+
+				require("ibl").setup({
+					indent = {
+						char = "│",
+						highlight = indent_hls,
+					},
+					scope = {
+						enabled = true,
+						char = "│",
+						highlight = "IblScope",
+						show_start = true,
+						show_end = true,
+						injected_languages = true,
+						include = {
+							node_type = {
+								["*"] = {
+									"function",
+									"function_declaration",
+									"arrow_function",
+									"function_expression",
+									"method_definition",
+									"class",
+									"class_declaration",
+									"class_body",
+									"if_statement",
+									"else_clause",
+									"for_statement",
+									"for_in_statement",
+									"while_statement",
+									"do_statement",
+									"switch_statement",
+									"switch_case",
+									"try_statement",
+									"catch_clause",
+									"finally_clause",
+									"object",
+									"array",
+									"block",
+									"statement_block",
+									"with_statement",
+									"decorated_definition",
+									"table_constructor",
+									"arguments",
+									"parameters",
+								},
+							},
+						},
+					},
+					exclude = {
+						filetypes = { "dashboard", "neo-tree", "toggleterm", "help", "lazy", "mason" },
 					},
 				})
 			end,

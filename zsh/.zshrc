@@ -1,80 +1,95 @@
-# ~/.zshrc
+# ── zinit ────────────────────────────────────────────────────────────
+source /usr/share/zinit/zinit.zsh
 
-# ── Oh My Zsh ────────────────────────────────────────────────────────
-export ZSH="$HOME/.oh-my-zsh"
-ZSH_THEME=""
+# ── Плагины (lazy loading — грузятся после появления prompt'а) ───────
+zinit ice wait lucid
+zinit light zsh-users/zsh-autosuggestions
 
-plugins=(
-    git
-    node
-    npm
-    you-should-use
-    vscode
-    docker
-    zsh-autosuggestions
-    fzf-tab
-    zsh-syntax-highlighting
-    sudo        # двойной Esc добавляет sudo к предыдущей команде
-    dirhistory  # Alt+Left/Right — навигация по истории директорий
-    copypath    # копирует текущий путь в буфер
-    jsontools   # pp_json и другие json утилиты
-    history-substring-search
-    command-not-found
-)
+zinit ice wait lucid
+zinit light zsh-users/zsh-syntax-highlighting
 
-source $ZSH/oh-my-zsh.sh
+zinit ice wait lucid
+zinit light Aloxaf/fzf-tab
+
+zinit ice wait lucid
+zinit light zsh-users/zsh-history-substring-search
+
+zinit ice wait lucid
+zinit light MichaelAquilina/zsh-you-should-use
+
+# omzsh-плагины которые стоит сохранить
+zinit ice wait lucid
+zinit snippet OMZ::plugins/sudo/sudo.plugin.zsh
+
+zinit ice wait lucid
+zinit snippet OMZ::plugins/dirhistory/dirhistory.plugin.zsh
+
+zinit ice wait lucid
+zinit snippet OMZ::plugins/copypath/copypath.plugin.zsh
+
+zinit ice wait lucid
+zinit snippet OMZ::plugins/git/git.plugin.zsh
 
 # ── Базовые настройки ────────────────────────────────────────────────
 export EDITOR=nvim
 export VISUAL=nvim
 
 # ── История ──────────────────────────────────────────────────────────
+HISTFILE=~/.zsh_history
 HISTSIZE=10000
 SAVEHIST=10000
 setopt HIST_IGNORE_DUPS
 setopt HIST_IGNORE_SPACE
+setopt SHARE_HISTORY
+
+# ── Автодополнение ───────────────────────────────────────────────────
+autoload -Uz compinit
+# обновляет кэш раз в сутки, иначе использует кэш
+if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
+  compinit
+else
+  compinit -C
+fi
 
 # ── PATH ─────────────────────────────────────────────────────────────
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/.cargo/bin:$PATH"
-export PNPM_HOME="$HOME/.local/share/pnpm"
-export PATH="$PNPM_HOME:$PATH"
-export PATH="$HOME/.pyenv/bin:$PATH"
 
 # ── bun ──────────────────────────────────────────────────────────────
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 [[ -s "$HOME/.bun/_bun" ]] && source "$HOME/.bun/_bun"
 
-# ── pyenv ────────────────────────────────────────────────────────────
-if command -v pyenv &>/dev/null; then
-    eval "$(pyenv init --path)"
-    eval "$(pyenv init -)"
-fi
+# ── uv (Python) ──────────────────────────────────────────────────────
+export PATH="$HOME/.local/bin:$PATH"  # uv ставит шимы сюда
 
 # ── Сторонние инициализации ──────────────────────────────────────────
 eval "$(starship init zsh)"
 eval "$(zoxide init zsh)"
 
-if command -v thefuck &>/dev/null; then
-    eval "$(thefuck --alias)"
-fi
+# thefuck — lazy: запускается только при первом вызове fuck
+fuck() {
+  eval "$(thefuck --alias)"
+  fuck "$@"
+}
 
 if command -v direnv &>/dev/null; then
-    eval "$(direnv hook zsh)"
+  eval "$(direnv hook zsh)"
 fi
 
-# ── Angular CLI ──────────────────────────────────────────────────────
-[[ -f "$(command -v ng 2>/dev/null)" ]] && source <(ng completion script)
+# ── Angular CLI (если нужен) ─────────────────────────────────────────
+# предварительно сгенерировать: ng completion script > ~/.config/zsh/ng-completion.zsh
+[[ -f ~/.config/zsh/ng-completion.zsh ]] && source ~/.config/zsh/ng-completion.zsh
 
 # ── Quickshell sequences ─────────────────────────────────────────────
 [[ -f ~/.local/state/quickshell/user/generated/terminal/sequences.txt ]] && \
-    cat ~/.local/state/quickshell/user/generated/terminal/sequences.txt
+  cat ~/.local/state/quickshell/user/generated/terminal/sequences.txt
 
 # ── Модули ───────────────────────────────────────────────────────────
 [[ -f ~/.config/zsh/aliases.zsh   ]] && source ~/.config/zsh/aliases.zsh
 [[ -f ~/.config/zsh/functions.zsh ]] && source ~/.config/zsh/functions.zsh
 [[ -f ~/.config/zsh/network.zsh   ]] && source ~/.config/zsh/network.zsh
+[[ -f ~/.config/zsh/vi-mode.zsh ]] && source ~/.config/zsh/vi-mode.zsh
 
 # ── fzf ──────────────────────────────────────────────────────────────
 source /usr/share/fzf/key-bindings.zsh
@@ -89,6 +104,5 @@ export FZF_DEFAULT_OPTS="
   --color=border:#89b4fa,bg+:#313244,fg+:#cdd6f4,hl:#f38ba8,hl+:#f38ba8,prompt:#89b4fa,pointer:#f5c2e7,marker:#a6e3a1,spinner:#f5c2e7,header:#89b4fa
 "
 
-# стиль превью в fzf-tab
 zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza --icons --color=always $realpath'
 zstyle ':fzf-tab:*' fzf-flags --border=rounded --padding=0,1
