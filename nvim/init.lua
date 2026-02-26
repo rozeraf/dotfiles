@@ -16,6 +16,7 @@ vim.opt.rtp:prepend(lazypath)
 
 -- ─── общие настройки (работают везде) ─────────────────────────────────────
 vim.opt.number = true
+vim.opt.relativenumber = true
 vim.opt.hlsearch = true
 vim.opt.incsearch = true
 vim.opt.ignorecase = true
@@ -52,6 +53,7 @@ vim.keymap.set("n", "<leader>xa", "<cmd>wa<cr><cmd>qa<cr>", { desc = "save all a
 
 -- ─── vscode ────────────────────────────────────────────────────────────────
 if vim.g.vscode then
+	vim.opt.relativenumber = true
 	require("lazy").setup({
 		{ "nvim-lua/plenary.nvim" },
 		{ "nvim-tree/nvim-web-devicons" },
@@ -59,6 +61,7 @@ if vim.g.vscode then
 		{ "tpope/vim-surround" },
 		{ "tpope/vim-commentary" },
 		{ "wellle/targets.vim" },
+
 		{
 			"rrethy/vim-illuminate",
 			config = function()
@@ -68,11 +71,12 @@ if vim.g.vscode then
 				})
 			end,
 		},
+
 		{
 			url = "https://codeberg.org/andyg/leap.nvim",
 			config = function()
 				vim.keymap.set({ "n", "x", "o" }, "s", "<plug>(leap-forward)")
-				vim.keymap.set({ "n", "x", "o" }, "s", "<plug>(leap-backward)")
+				vim.keymap.set({ "n", "x", "o" }, "S", "<plug>(leap-backward)")
 				vim.keymap.set({ "n", "x", "o" }, "gs", "<plug>(leap-from-window)")
 			end,
 		},
@@ -86,11 +90,73 @@ if vim.g.vscode then
 
 		{ "tpope/vim-fugitive" },
 
+		-- ─── autopairs (insert mode) ─────────────────────────────────────
+		{
+			"windwp/nvim-autopairs",
+			event = "InsertEnter",
+			config = function()
+				require("nvim-autopairs").setup({
+					check_ts = true,
+					ts_config = {
+						lua = { "string" },
+						javascript = { "template_string" },
+						typescript = { "template_string" },
+					},
+				})
+			end,
+		},
+
+		-- ─── диагностика (использует LSP vscode-neovim) ─────────────────
+		{
+			"folke/trouble.nvim",
+			dependencies = { "nvim-tree/nvim-web-devicons" },
+			config = function()
+				require("trouble").setup({})
+				vim.keymap.set(
+					"n",
+					"<leader>xx",
+					"<cmd>Trouble diagnostics toggle<cr>",
+					{ desc = "diagnostics (project)" }
+				)
+				vim.keymap.set(
+					"n",
+					"<leader>xb",
+					"<cmd>Trouble diagnostics toggle filter.buf=0<cr>",
+					{ desc = "diagnostics (buffer)" }
+				)
+				vim.keymap.set("n", "<leader>xs", "<cmd>Trouble symbols toggle<cr>", { desc = "symbols" })
+				vim.keymap.set("n", "<leader>xr", "<cmd>Trouble lsp_references toggle<cr>", { desc = "lsp references" })
+			end,
+		},
+
+		-- ─── поиск и замена по проекту ───────────────────────────────────
+		{
+			"magicduck/grug-far.nvim",
+			config = function()
+				require("grug-far").setup({
+					windowcreationcommand = "vsplit",
+					extrargargs = "",
+					resultsseparatorlinechar = "─",
+				})
+				vim.keymap.set("n", "<leader>sr", function()
+					require("grug-far").open({ prefills = { search = vim.fn.expand("<cword>") } })
+				end, { desc = "search and replace (word under cursor)" })
+				vim.keymap.set("v", "<leader>sr", function()
+					require("grug-far").with_visual_selection()
+				end, { desc = "search and replace (selection)" })
+			end,
+		},
+
 		{
 			"nvim-telescope/telescope.nvim",
 			dependencies = { "nvim-lua/plenary.nvim" },
 			config = function()
 				require("telescope").setup({})
+				vim.keymap.set("n", "<leader>ff", require("telescope.builtin").find_files)
+				vim.keymap.set("n", "<leader>fg", require("telescope.builtin").live_grep)
+				vim.keymap.set("n", "<leader>fb", require("telescope.builtin").buffers)
+				vim.keymap.set("n", "<leader>fh", require("telescope.builtin").help_tags)
+				vim.keymap.set("n", "<leader>fr", require("telescope.builtin").oldfiles)
 			end,
 		},
 
