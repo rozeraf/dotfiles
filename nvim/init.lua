@@ -424,7 +424,7 @@ else
 			config = function()
 				require("oil").setup({
 					view_options = { show_hidden = true },
-					columns = { "icon", "size", "mtime" },
+					columns = { "icon", "permissions", "size", "mtime" },
 					buf_options = { buflisted = false, bufhidden = "hide" },
 					default_file_explorer = true,
 					float = { padding = 2, max_width = 80, max_height = 30 },

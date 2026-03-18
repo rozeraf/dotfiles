@@ -1,0 +1,40 @@
+# os junk
+.DS_Store
+Thumbs.db
+
+# editor temp files
+*.swp
+*.swo
+*~
+
+# editor files
+.vscode/
+.idea/
+
+# says by itself
+*.log
+
+# build artefacts
+*.o
+*.obj
+*.a
+*.so
+*.exe
+*.out
+
+# cmake
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+
+# cache
+.cache/
+
+# claude memory
+gitutor/.claude/
+
+# binaries
+gitutor/gitutor
+nvimtutor/nvimtutor
+zshtutor/zshtutor
