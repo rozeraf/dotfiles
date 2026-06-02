@@ -4,8 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Personal dotfiles for Arch Linux + Hyprland. Components:
+Personal dotfiles for Arch Linux + Hyprland / Niri. Components:
 
+- `niri/` — Niri scrollable tiling compositor config
 - `nvim/` — Neovim config (`init.lua`, Lazy.nvim plugin manager)
 - `nvimtutor/` — C program: interactive Neovim cheatsheet (`nvimtutor.c`, `Makefile`)
 - `zsh/` — zsh config (`.zshrc`, `aliases.zsh`, `functions.zsh`, `network.zsh`)

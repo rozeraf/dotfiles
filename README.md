@@ -1,11 +1,11 @@
 # dotfiles
 
-Personal configuration files for Arch Linux + Hyprland.
+Personal configuration files for Arch Linux + Hyprland / Niri.
 
 ## Stack
 
 - **OS**: Arch Linux
-- **WM**: Hyprland (end-4 dotfiles)
+- **WM**: Hyprland / Niri
 - **Shell**: zsh + Oh My Zsh + Starship
 - **Editor**: Neovim
 - **Terminal**: Kitty
@@ -15,6 +15,9 @@ Personal configuration files for Arch Linux + Hyprland.
 
 ```
 dotfiles/
+├── niri/
+│   ├── config.kdl        # Niri scrollable tiling compositor config
+│   └── noctalia.kdl      # Niri colors/theme
 ├── nvim/
 │   └── init.lua          # Neovim config (Lazy.nvim)
 ├── nvimtutor/
