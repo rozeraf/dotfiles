@@ -1,8 +1,40 @@
 # ~/.config/zsh/functions.zsh
 
-# ── Nautilus в фоне ──────────────────────────────────────────────────
-function nhn() {
-    nautilus "${1:-.}" & disown
+# ── Копирование pwd ──────────────────────────────────────────────────
+pwdcopy() {
+    pwd | wl-copy
+}
+
+# ── cow ──────────────────────────────────────────────────
+cow() {
+  local text
+  if (( $# > 0 )); then
+    text="$*"
+  else
+    text="$(cat)"
+  fi
+
+  printf '%s\n' "$text" | cowsay | lolcat
+}
+
+# ── fastfetch конфиги ──────────────────────────────────────────────────
+ff() {
+  local ffdir="${XDG_CONFIG_HOME:-$HOME/.config}/fastfetch"
+
+  case "$1" in
+    more)
+      shift
+      command fastfetch -c "$ffdir/more.jsonc" "$@"
+      ;;
+    *)
+      command fastfetch "$@"
+      ;;
+  esac
+}
+
+# ── Thunar в фоне ──────────────────────────────────────────────────
+function tn() {
+    thunar "${1:-.}" & disown
 }
 
 # ── Quickshell ───────────────────────────────────────────────────────
@@ -76,39 +108,30 @@ function qr() {
 }
 
 # ── Поиск файлов ─────────────────────────────────────────────────────
-function findf() {
-    if [[ $# -eq 0 ]]; then
-        echo "Использование: findf <имя_файла>"
-        return 1
-    fi
-    find . -name "*$1*" -type f
-}
+# function findf() {
+#     if [[ $# -eq 0 ]]; then
+#         echo "Использование: findf <имя_файла>"
+#         return 1
+#     fi
+#     find . -name "*$1*" -type f
+# }
 
-# ── База данных ──────────────────────────────────────────────────────
-function psql5432() {
-    env PGPASSWORD='vdYpYlCsB7YuFp1u' psql \
-        -h aws-0-eu-central-1.pooler.supabase.com \
-        -p 5432 \
-        -d postgres \
-        -U postgres.trluujtvwlhjqwyjraij \
-        "$@"
-}
 
 # ── Копирование вывода команды ────────────────────────────────────────
-function ccmd() {
-    local TMP="/tmp/kitty_command_output_$(id -u).txt"
-    printf '$ %s\n' "$*" > "$TMP"
-    local OUTFILE=$(mktemp)
-    eval "$@" 2>&1 | tee "$OUTFILE"
-    if command -v perl &>/dev/null; then
-        perl -pe 's/\x1b\[[0-9;]*[mK]//g' < "$OUTFILE" >> "$TMP"
-    else
-        sed -r 's/\x1b\[[0-9;]*[mK]//g' < "$OUTFILE" >> "$TMP"
-    fi
-    rm -f "$OUTFILE"
-    if command -v wl-copy &>/dev/null; then
-        wl-copy < "$TMP"
-    else
-        kitty +kitten clipboard < "$TMP" >/dev/null 2>&1
-    fi
-}
+# function ccmd() {
+#     local TMP="/tmp/kitty_command_output_$(id -u).txt"
+#     printf '$ %s\n' "$*" > "$TMP"
+#     local OUTFILE=$(mktemp)
+#     eval "$@" 2>&1 | tee "$OUTFILE"
+#     if command -v perl &>/dev/null; then
+#         perl -pe 's/\x1b\[[0-9;]*[mK]//g' < "$OUTFILE" >> "$TMP"
+#     else
+#         sed -r 's/\x1b\[[0-9;]*[mK]//g' < "$OUTFILE" >> "$TMP"
+#     fi
+#     rm -f "$OUTFILE"
+#     if command -v wl-copy &>/dev/null; then
+#         wl-copy < "$TMP"
+#     else
+#         kitty +kitten clipboard < "$TMP" >/dev/null 2>&1
+#     fi
+# }

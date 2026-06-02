@@ -41,11 +41,11 @@ Key behavior: `d`/`x`/`dd` delete to void register (not clipboard); `<leader>d` 
 
 ### zsh
 
-`.zshrc` sources the other files. `aliases.zsh` overrides system commands: `cat`→`bat`, `grep`→`rg`, `find`→`fd`, `tree`→`eza --tree`.
+`.zshrc` sources the other files. `aliases.zsh` overrides system commands: `cat`→`bat`, `grep`→`rg`, `find`→`fd`, `ls`→`lsd`.
 
 ## Dependencies
 
 ```zsh
-sudo pacman -S base-devel neovim git ripgrep fd fzf eza bat zoxide starship \
+sudo pacman -S base-devel neovim git ripgrep fd fzf lsd bat zoxide starship \
   ttf-nerd-fonts-symbols-common wl-clipboard
 ```

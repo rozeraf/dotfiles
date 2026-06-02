@@ -85,23 +85,23 @@ nvimtutor
 ```
 
 Covers: navigation, editing, text objects, search & replace, buffers/windows, project/directory workflow, plugins, LSP, Telescope.
-
 ## zsh
 
-**Plugins:** git, zsh-autosuggestions, zsh-syntax-highlighting, fzf-tab, history-substring-search, you-should-use, sudo, dirhistory, copypath, jsontools
+**Plugins:** git, zsh-autosuggestions, zsh-syntax-highlighting, fzf-tab, history-substring-search, you-should-use
 
 **Notable aliases:**
 
 ```zsh
 i               sudo pacman -S --needed
-pget            paru -S
 fnvim           fzf | xargs nvim  (fuzzy open file in nvim)
-tree            eza --tree --icons
-ll              eza -la --icons
+tree            lsd --tree
+ll              lsd -l
+la              lsd -A
 cat             bat
 grep            rg
 find            fd
 z               zoxide (smart cd)
+zi              zoxide query -i
 ```
 
 **Functions:**
@@ -113,17 +113,18 @@ z               zoxide (smart cd)
 | `ports [n]` | list listening ports, or specific port |
 | `killport <n>` | kill process on port |
 | `myip` | show external and local IP |
-| `ccmd <cmd>` | run command and copy output to clipboard |
+| `pwdcopy` | copy current directory path to clipboard |
 | `qr <text>` | generate QR code in terminal |
-| `nhn [dir]` | open Nautilus in background |
+| `tn [dir]` | open Thunar in background |
 
 ## Dependencies
 
 Install all at once:
 
 ```zsh
-i base-devel neovim git ripgrep fd fzf eza bat zoxide starship \
+i base-devel neovim git ripgrep fd fzf lsd bat zoxide starship \
   ttf-nerd-fonts-symbols-common wl-clipboard
+```
 git clone https://aur.archlinux.org/paru.git
 cd paru
 makepkg -si

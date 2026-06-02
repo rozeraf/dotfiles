@@ -1,113 +1,170 @@
-
-# Don't print a new line at the start of the prompt
+palette = "noctalia"
 add_newline = false
-# Pipes ╰─ ╭─
-# Powerline symbols                                     
-# Wedges 🭧🭒 🭣🭧🭓
-# Random noise 🬖🬥🬔🬗
-# Cool stuff 󰜥   
 
-# format = """
-# $cmd_duration$username$hostname $directory $git_branch
-# $character
-# """
 format = """
-$cmd_duration  󰜥 $directory $git_branch
+$directory$git_branch$git_status$python$nix_shell$docker_context$container$cmd_duration$jobs$status
 $character
 """
-[custom.vi_insert]
-command = "echo ' I'"
-when    = '[[ "$VI_MODE" == "I" ]]'
-shell   = ["zsh", "-c"]
-format  = "[](bold fg:blue)[$output](bold bg:blue fg:black)[](bold fg:blue)"
-unsafe   = true
-[custom.vi_normal]
-command = "echo ' N'"
-when    = '[[ "$VI_MODE" != "I" ]]'
-shell   = ["zsh", "-c"]
-format  = "[](bold fg:red)[$output](bold bg:red fg:black)[](bold fg:red)"
-unsafe   = true
-# Replace the "❯" symbol in the prompt with "➜"
-[character]                            # The name of the module we are configuring is "character"
-success_symbol = "[   ](bold fg:blue)"
-error_symbol = "[   ](bold fg:red)"
 
-# Disable the package module, hiding it from the prompt completely
+[character]
+success_symbol = "[\\$](bold green)"
+error_symbol = "[\\$](bold red)"
+
+[username]
+disabled = true
+
+[hostname]
+disabled = true
+
+[directory]
+home_symbol = "~"
+read_only = " ro"
+style = "bold yellow"
+truncation_length = 4
+truncation_symbol = ".../"
+format = "[$path]($style)"
+
+[directory.substitutions]
+
+[git_branch]
+symbol = "git:"
+style = "bold magenta"
+truncation_length = 20
+truncation_symbol = ""
+format = " [$symbol$branch]($style)"
+
+[git_status]
+style = "bold red"
+conflicted = " !"
+ahead = " >"
+behind = " <"
+diverged = " <>"
+untracked = " ?"
+stashed = " $"
+modified = " *"
+staged = " +"
+renamed = " r"
+deleted = " d"
+format = "([$all_status]($style))"
+
+[python]
+python_binary = "python3"
+format = " [py:$version(\\($virtualenv\\))]($style)"
+style = "bold yellow"
+detect_extensions = []
+detect_files = []
+detect_folders = []
+
+[nix_shell]
+heuristic = true
+format = " [nix:$state( \\($name\\))]($style)"
+style = "bold blue"
+impure_msg = "impure"
+pure_msg = "pure"
+unknown_msg = "shell"
+
+[docker_context]
+only_with_files = true
+format = " [docker:$context]($style)"
+style = "bold blue"
+
+[container]
+format = " [ctr:$name]($style)"
+style = "bold red dimmed"
+
+[cmd_duration]
+min_time = 2000
+format = " [$duration](bold yellow)"
+min_time_to_notify = 45000
+
+[jobs]
+symbol = "jobs:"
+symbol_threshold = 1
+number_threshold = 2
+format = " [$symbol$number]($style)"
+style = "bold blue"
+
+[status]
+disabled = false
+symbol = "x"
+success_symbol = ""
+not_found_symbol = "nf"
+not_executable_symbol = "nx"
+sigint_symbol = "^C"
+signal_symbol = "sig"
+format = " [$symbol$status]($style)"
+style = "bold red"
+
 [package]
 disabled = true
 
-[git_branch]
-style = "bg: cyan"
-symbol = "󰘬"
-truncation_length = 12
-truncation_symbol = ""
-format = "󰜥 [](bold fg:cyan)[$symbol $branch(:$remote_branch)](fg:black bg:cyan)[ ](bold fg:cyan)"
-
 [git_commit]
-commit_hash_length = 4
-tag_symbol = " "
+disabled = true
 
 [git_state]
-format = '[\($state( $progress_current of $progress_total)\)]($style) '
-cherry_pick = "[🍒 PICKING](bold red)"
-
-[git_status]
-conflicted = " 🏳 "
-ahead = " 🏎💨 "
-behind = " 😰 "
-diverged = " 😵 "
-untracked = " 🤷 ‍"
-stashed = " 📦 "
-modified = " 📝 "
-staged = '[++\($count\)](green)'
-renamed = " ✍️ "
-deleted = " 🗑 "
-
-[hostname]
-ssh_only = false
-format =  "[•$hostname](bg:cyan bold fg:black)[](bold fg:cyan)"
-trim_at = ".companyname.com"
-disabled = false
+format = '[\($state( $progress_current/$progress_total)\)](bold yellow) '
 
 [line_break]
 disabled = false
 
-[memory_usage]
-disabled = true
-threshold = -1
-symbol = " "
-style = "bold dimmed green"
-
 [time]
 disabled = true
-format = '🕙[\[ $time \]]($style) '
-time_format = "%T"
 
-[username]
-style_user = "bold bg:cyan fg:black"
-style_root = "red bold"
-format = "[](bold fg:cyan)[$user]($style)"
-disabled = false
-show_always = true
-
-[directory]
-home_symbol = "  "
-read_only = "  "
-style = "bg:green fg:black"
-truncation_length = 6
-truncation_symbol = " ••/"
-format = '[](bold fg:green)[󰉋 $path]($style)[](bold fg:green)'
+[memory_usage]
+disabled = true
 
 
-[directory.substitutions]
-"Desktop" = "  "
-"Documents" = "  "
-"Downloads" = "  "
-"Music" = " 󰎈 "
-"Pictures" = "  "
-"Videos" = "  "
-"GitHub" = " 󰊤 "
 
-[cmd_duration]
-min_time = 0
-format = '[](bold fg:yellow)[󰪢 $duration](bold bg:yellow fg:black)[](bold fg:yellow)'
+
+
+
+
+
+
+
+
+
+
+# >>> NOCTALIA STARSHIP PALETTE >>>
+# Noctalia Starship Palette
+# Generated by Noctalia - do not edit manually
+
+[palettes.noctalia]
+# Standard colors
+blue      = "#f4b7b7"
+red       = "#ffb4ab"
+green     = "#e7b4ff"
+yellow    = "#d3c0d8"
+cyan      = "#d3c0d8"
+magenta   = "#e7b4ff"
+white     = "#e2e2e2"
+black     = "#474747"
+
+# Extended palette (Catppuccin-compatible names)
+rosewater = "#d3c0d8"
+flamingo  = "#ffb4ab"
+pink      = "#e7b4ff"
+mauve     = "#e7b4ff"
+maroon    = "#ffb4ab"
+peach     = "#d3c0d8"
+teal      = "#d3c0d8"
+sky       = "#d3c0d8"
+sapphire  = "#f4b7b7"
+lavender  = "#e7b4ff"
+
+# Text shades
+text      = "#e2e2e2"
+subtext1  = "#e2e2e2"
+subtext0  = "#919191"
+
+# Surface shades
+overlay2  = "#919191"
+overlay1  = "#919191"
+overlay0  = "#474747"
+surface2  = "#474747"
+surface1  = "#474747"
+surface0  = "#131313"
+base      = "#131313"
+mantle    = "#131313"
+crust     = "#131313"
+# <<< NOCTALIA STARSHIP PALETTE <<<
