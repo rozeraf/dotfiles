@@ -1,0 +1,55 @@
+# elx configuration file
+
+# Display icons next to file names (requires Nerd Font)
+icons = false
+
+# Use colors in output
+color = true
+
+# Respect .gitignore files
+git_ignore = true
+
+# Global ignore patterns (glob)
+# Example: ignore = ["*.json", "node_modules", "bin"]
+ignore = []
+
+# Append indicator (one of /) to directories
+classify = true
+
+# Default recursion depth for tree view (uncomment to set)
+# depth = 3
+
+[hyperlinks]
+# Master switch: enable clickable OSC 8 hyperlinks in supported terminals
+enabled = true
+# Control which entry types get hyperlinks
+files = true
+dirs = false
+symlinks = true
+executables = true
+
+[long]
+# Display column headers in long listing format
+headers = true
+
+# Automatically hide columns that are empty for all shown entries (e.g., Git column if no changes)
+autohide_columns = true
+
+# Columns to display in long listing format.
+# Available columns: git, permissions, links, owner, group, size, date, name
+columns = [
+    "permissions",
+    "links",
+    "owner",
+    "group",
+    "size",
+    "date",
+    "name",
+    "git",
+]
+
+[when_not_tty]
+# Configuration for when output is redirected (e.g., to a file or pipe)
+icons = false
+color = false
+one_per_line = true
