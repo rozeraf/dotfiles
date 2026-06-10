@@ -17,6 +17,27 @@ cow() {
   printf '%s\n' "$text" | cowsay | lolcat
 }
 
+# ── temp файл через zed ──────────────────────────────────────────────────
+tempfile() {
+  local tmpfile
+  tmpfile="$(mktemp /tmp/zedtmp.XXXXXX)"
+
+  # удалить файл при любом выходе функции
+  cleanup() {
+    rm -f "$tmpfile"
+  }
+
+  trap cleanup EXIT INT TERM
+
+  # открыть и дождаться закрытия Zed
+  zed --wait "$tmpfile"
+
+  # очистка (на случай нормального выхода)
+  cleanup
+
+  trap - EXIT INT TERM
+}
+
 # ── fastfetch конфиги ──────────────────────────────────────────────────
 ff() {
   local ffdir="${XDG_CONFIG_HOME:-$HOME/.config}/fastfetch"

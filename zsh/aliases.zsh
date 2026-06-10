@@ -12,11 +12,10 @@ alias zshrc='nvim ~/.zshrc'
 alias torrent='qbittorrent'
 
 # ── File tools ───────────────────────────────────────────────────────
-alias ls='lsd'
-alias la='lsd -A'
-alias ll='lsd -l'
-alias lah='lsd -lAh'
-alias tree='lsd --tree'
+alias ls='elx'
+alias la='elx -la'
+alias ll='elx -l'
+alias tree='elx --tree'
 alias fnvim='fzf --preview "bat --color=always {}" | xargs nvim'
 
 # ── Navigation ───────────────────────────────────────────────────────
