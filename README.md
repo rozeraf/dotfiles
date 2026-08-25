@@ -20,6 +20,9 @@ dotfiles/
 │   └── noctalia.kdl      # Niri colors/theme
 ├── nvim/
 │   └── init.lua          # Neovim config (Lazy.nvim)
+├── bututor/
+│   ├── bututor.c         # Interactive GitButler CLI cheatsheet
+│   └── Makefile
 ├── nvimtutor/
 │   ├── nvimtutor.c       # Interactive Neovim cheatsheet
 │   └── Makefile
@@ -88,6 +91,21 @@ nvimtutor
 ```
 
 Covers: navigation, editing, text objects, search & replace, buffers/windows, project/directory workflow, plugins, LSP, Telescope.
+
+## bututor
+
+Interactive terminal cheatsheet for the GitButler CLI: workspace model, CLI IDs,
+selective commits, stacks, history editing, pull requests, conflicts, and oplog.
+
+```zsh
+cd dotfiles/bututor
+make
+./bututor
+sudo make install      # installs to /usr/local/bin/bututor
+```
+
+Navigation follows the other tutors: `j`/`k`, `Enter`/`l`, `h`/`q`, `gg`, and `G`.
+
 ## zsh
 
 **Plugins:** git, zsh-autosuggestions, zsh-syntax-highlighting, fzf-tab, history-substring-search, you-should-use
