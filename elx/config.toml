@@ -1,5 +1,7 @@
 # elx configuration file
 
+schema_version = 3
+
 # Display icons next to file names (requires Nerd Font)
 icons = false
 
@@ -24,7 +26,7 @@ classify = true
 enabled = true
 # Control which entry types get hyperlinks
 files = true
-dirs = false
+dirs = false        # disabled: clicking a dir opens it in a file manager
 symlinks = true
 executables = true
 

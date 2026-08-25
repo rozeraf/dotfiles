@@ -386,7 +386,6 @@ else
 				vim.keymap.set("n", "-", "<cmd>Oil<cr>", { desc = "open parent directory (oil)" })
 			end,
 		},
-
 		{
 			"magicduck/grug-far.nvim",
 			config = function()

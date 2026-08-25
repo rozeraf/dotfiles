@@ -1,134 +1,178 @@
 {
-    "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
-    "display": {
-        "separator": "",
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+
+  "display": {
+    "separator": ""
+  },
+
+  "logo": {
+    "type": "file",
+    "source": "~/.config/fastfetch/logo",
+    "position": "top",
+
+    "padding": {
+      "top": 1,
+      "bottom": 0,
+      "left": 0,
+      "right": 0
     },
-    "logo": {
-        "type": "file",
-        "source": "~/.config/fastfetch/logo.txt",
-        "padding": {
-            "top": 1,
-            "left": 0,
-            "right": 2,
-        },
-        "color": {
-            "1": "blue",
-        },
+
+    "color": {
+      "1": "#e7b4ff"
+    }
+  },
+
+  "modules": [
+    {
+      "type": "title",
+      "format": "{##e7b4ff}{user-name}@{host-name}{#}"
     },
-    "modules": [
-        {
-            "type": "title",
-            "format": "{#blue}{user-name}{#default}@{#blue}{host-name}",
-        },
-        {
-            "type": "custom",
-            "key": "├─ ",
-            "keyColor": "cyan",
-            "outputColor": "cyan",
-            "format": "system/",
-        },
-        {
-            "type": "os",
-            "key": "│  ├─ 󰣇  ",
-            "keyColor": "cyan",
-            "format": "{name} {#8}{arch}{#default}",
-        },
-        {
-            "type": "kernel",
-            "key": "│  ├─ 󰒓  ",
-            "keyColor": "cyan",
-            "format": "{release}",
-        },
-        {
-            "type": "uptime",
-            "key": "│  └─ 󰅐  ",
-            "keyColor": "cyan",
-            "format": "{formatted}",
-        },
-        {
-            "type": "custom",
-            "key": "├─ ",
-            "keyColor": "blue",
-            "outputColor": "blue",
-            "format": "desktop/",
-        },
-        {
-            "type": "command",
-            "key": "│  └─ 󰇄  ",
-            "keyColor": "blue",
-            "text": "DESKTOP_STACK_CACHE_TTL=30 ~/.local/bin/desktop-stack",
-            "format": "{result}",
-        },
-        {
-            "type": "custom",
-            "key": "├─ ",
-            "keyColor": "magenta",
-            "outputColor": "magenta",
-            "format": "shell/",
-        },
-        {
-            "type": "terminal",
-            "key": "│  ├─ 󰄛  ",
-            "keyColor": "magenta",
-            "format": "{pretty-name} {#8}{version}{#default}",
-        },
-        {
-            "type": "shell",
-            "key": "│  └─   ",
-            "keyColor": "magenta",
-            "format": "{pretty-name} {#8}{version}{#default}",
-        },
-        {
-            "type": "custom",
-            "key": "├─ ",
-            "keyColor": "yellow",
-            "outputColor": "yellow",
-            "format": "hardware/",
-        },
-        {
-            "type": "cpu",
-            "key": "│  ├─   ",
-            "keyColor": "yellow",
-            "format": "{name}",
-        },
-        {
-            "type": "gpu",
-            "key": "│  ├─ 󰢮  ",
-            "keyColor": "yellow",
-            "driverSpecific": true,
-            "format": "{name}",
-        },
-        {
-            "type": "memory",
-            "key": "│  └─   ",
-            "keyColor": "yellow",
-            "format": "{used} / {total} {#8}({percentage}){#default}",
-        },
-        {
-            "type": "custom",
-            "key": "├─ ",
-            "keyColor": "green",
-            "outputColor": "green",
-            "format": "storage/",
-        },
-        {
-            "type": "disk",
-            "key": "│  └─   ",
-            "keyColor": "green",
-            "format": "{mountpoint} {size-used} / {size-total} {#8}({size-percentage}){#default}",
-        },
-        {
-            "type": "custom",
-            "key": "└─ ",
-            "keyColor": "blue",
-            "outputColor": "blue",
-            "format": "network/",
-        },
-        {
-            "type": "localip",
-            "key": "   └─ 󰩟  ",
-            "keyColor": "blue",
-            "format": "{ipv4}",
-        },
-    ],
+
+    {
+      "type": "custom",
+      "key": "├─ ",
+      "keyColor": "cyan",
+      "outputColor": "cyan",
+      "format": "system/"
+    },
+
+    {
+      "type": "os",
+      "key": "│  ├─ 󰣇  ",
+      "keyColor": "cyan",
+      "format": "{name} {##919191}{arch}{#}"
+    },
+
+    {
+      "type": "kernel",
+      "key": "│  ├─ 󰒓  ",
+      "keyColor": "cyan",
+      "format": "{release}"
+    },
+
+    {
+      "type": "uptime",
+      "key": "│  └─ 󰅐  ",
+      "keyColor": "cyan",
+      "format": "{formatted}"
+    },
+
+    {
+      "type": "custom",
+      "key": "├─ ",
+      "keyColor": "blue",
+      "outputColor": "blue",
+      "format": "desktop/"
+    },
+
+    {
+      "type": "command",
+      "key": "│  └─ 󰇄  ",
+      "keyColor": "blue",
+      "text": "DESKTOP_STACK_CACHE_TTL=30 ~/.local/bin/desktop-stack",
+      "format": "{result}"
+    },
+
+    {
+      "type": "custom",
+      "key": "├─ ",
+      "keyColor": "magenta",
+      "outputColor": "magenta",
+      "format": "shell/"
+    },
+
+    {
+      "type": "terminal",
+      "key": "│  ├─ 󰄛  ",
+      "keyColor": "magenta",
+      "format": "{pretty-name} {##919191}{version}{#}"
+    },
+
+    {
+      "type": "shell",
+      "key": "│  └─   ",
+      "keyColor": "magenta",
+      "format": "{pretty-name} {##919191}{version}{#}"
+    },
+
+    {
+      "type": "custom",
+      "key": "├─ ",
+      "keyColor": "yellow",
+      "outputColor": "yellow",
+      "format": "hardware/"
+    },
+
+    {
+      "type": "cpu",
+      "key": "│  ├─   ",
+      "keyColor": "yellow",
+      "format": "{name}"
+    },
+
+    {
+      "type": "gpu",
+      "key": "│  ├─ 󰢮  ",
+      "keyColor": "yellow",
+      "driverSpecific": true,
+      "format": "{name}"
+    },
+
+    {
+      "type": "memory",
+      "key": "│  └─   ",
+      "keyColor": "yellow",
+      "format": "{used} / {total} {##919191}({percentage}){#}"
+    },
+
+    {
+      "type": "custom",
+      "key": "├─ ",
+      "keyColor": "green",
+      "outputColor": "green",
+      "format": "storage/"
+    },
+
+    {
+      "type": "disk",
+      "key": "│  └─   ",
+      "keyColor": "green",
+      "format": "{mountpoint} {size-used} / {size-total} {##919191}({size-percentage}){#}"
+    },
+
+    {
+      "type": "custom",
+      "key": "└─ ",
+      "keyColor": "blue",
+      "outputColor": "blue",
+      "format": "network/"
+    },
+
+    {
+      "type": "localip",
+      "key": "   ├─ 󰩟  ",
+      "keyColor": "blue",
+
+      "showIpv4": true,
+      "showIpv6": false,
+      "showPrefixLen": false,
+      "defaultRouteOnly": true,
+
+      "format": "{ipv4}"
+    },
+
+    {
+      "type": "localip",
+      "key": "   └─ 󰖩  ",
+      "keyColor": "blue",
+
+      "showIpv4": true,
+      "showIpv6": false,
+      "showPrefixLen": false,
+      "defaultRouteOnly": false,
+      "namePrefix": "tailscale",
+
+      "format": "{ipv4}"
+    }
+  ]
 }
