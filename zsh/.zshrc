@@ -37,9 +37,6 @@ KEYTIMEOUT=5
 
 unsetopt BEEP
 
-setopt AUTO_CD
-
-
 # History
 
 HISTFILE="$HOME/.zsh_history"

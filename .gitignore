@@ -2,6 +2,12 @@
 .DS_Store
 Thumbs.db
 
+# Generated / machine-specific
+compile_commands.json
+
+# Local/private shell config
+zsh/aliases.local.zsh
+zsh/.week_phrase_guard.zsh
 # editor temp files
 *.swp
 *.swo
