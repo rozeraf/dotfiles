@@ -8,31 +8,11 @@ Personal dotfiles for Arch Linux + Hyprland / Niri. Components:
 
 - `niri/` — Niri scrollable tiling compositor config
 - `nvim/` — Neovim config (`init.lua`, Lazy.nvim plugin manager)
-- `bututor/` — C program: interactive GitButler CLI cheatsheet
-- `nvimtutor/` — C program: interactive Neovim cheatsheet (`nvimtutor.c`, `Makefile`)
 - `zsh/` — zsh config (`.zshrc`, `aliases.zsh`, `functions.zsh`, `network.zsh`)
 - `kitty/` — Kitty terminal config
 - `starship/` — Starship prompt config
 
 ## Build & Install
-
-### bututor (C program)
-
-```zsh
-cd bututor
-make
-sudo make install
-make clean
-```
-
-### nvimtutor (C program)
-
-```zsh
-cd nvimtutor
-make                  # compiles to ~/.local/bin/nvimtutor
-sudo make install     # installs to /usr/local/bin/nvimtutor
-make clean
-```
 
 ### Neovim
 

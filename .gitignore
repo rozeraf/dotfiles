@@ -36,12 +36,3 @@ CMakeCache.txt
 
 # cache
 .cache/
-
-# claude memory
-gitutor/.claude/
-
-# binaries
-bututor/bututor
-gitutor/gitutor
-nvimtutor/nvimtutor
-zshtutor/zshtutor

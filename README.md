@@ -22,11 +22,7 @@ dotfiles/
 ├── nvim/         Neovim config managed with lazy.nvim
 ├── starship/     Starship prompt
 ├── zsh/          Zsh startup, aliases, functions, and networking helpers
-├── elx/          elx file-listing config
-├── bututor/      GitButler interactive terminal cheatsheet
-├── gitutor/      Git interactive terminal cheatsheet
-├── nvimtutor/    Neovim interactive terminal cheatsheet
-└── zshtutor/     Zsh interactive terminal cheatsheet
+└── elx/          elx file-listing config
 ```
 
 These are personal files, not a universal installer. Review paths and settings before linking them into `~/.config`.
@@ -111,20 +107,8 @@ Main mappings use `Space` as leader:
 
 ## Tutors
 
-The repository contains four ncurses-style terminal cheatsheets. Build all of them from the repository root:
-
-```bash
-make build
-```
-
-Or select one:
-
-```bash
-make build gitutor
-make install nvimtutor
-```
-
-Available targets are `bututor`, `gitutor`, `nvimtutor`, and `zshtutor`. Run `make help` for the complete interface.
+The interactive terminal cheatsheets previously stored here now live in the
+separate [`rozeraf/tutors`](https://github.com/rozeraf/tutors) repository.
 
 ## Base dependencies
 
