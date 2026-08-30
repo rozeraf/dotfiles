@@ -6,23 +6,17 @@
   },
 
   "logo": {
-    "type": "file",
-    "source": "~/.config/fastfetch/logo",
-    "position": "top",
-
-    "padding": {
-      "top": 1,
-      "bottom": 0,
-      "left": 0,
-      "right": 0
-    },
-
-    "color": {
-      "1": "#e7b4ff"
-    }
+    "type": "none"
   },
 
   "modules": [
+    {
+      "type": "command",
+      "key": " ",
+      "text": "~/.local/bin/wallfetch --render-logo",
+      "format": "{result}"
+    },
+
     {
       "type": "title",
       "format": "{##e7b4ff}{user-name}@{host-name}{#}"

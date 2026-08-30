@@ -1,152 +1,140 @@
 # dotfiles
 
-Personal configuration files for Arch Linux + Hyprland / Niri.
+Personal configuration for an Artix/Arch Linux desktop built around Niri and Noctalia Shell.
 
-## Stack
+## Current stack
 
-- **OS**: Arch Linux
-- **WM**: Hyprland / Niri
-- **Shell**: zsh + Oh My Zsh + Starship
-- **Editor**: Neovim
-- **Terminal**: Kitty
-- **Package managers**: pacman / paru / bun
+- **OS:** Artix Linux (Arch-compatible packages)
+- **Compositor:** Niri
+- **Desktop shell:** Noctalia Shell
+- **Shell:** Zsh with Starship
+- **Terminal:** Kitty
+- **Editor:** Neovim
+- **CLI tools:** `elx`, `fzf`, `ripgrep`, `fd`, `bat`, `zoxide`
 
-## Structure
+## Repository layout
 
-```
+```text
 dotfiles/
-├── niri/
-│   ├── config.kdl        # Niri scrollable tiling compositor config
-│   └── noctalia.kdl      # Niri colors/theme
-├── nvim/
-│   └── init.lua          # Neovim config (Lazy.nvim)
-├── bututor/
-│   ├── bututor.c         # Interactive GitButler CLI cheatsheet
-│   └── Makefile
-├── nvimtutor/
-│   ├── nvimtutor.c       # Interactive Neovim cheatsheet
-│   └── Makefile
-├── zsh/
-│   ├── .zshrc
-│   ├── aliases.zsh
-│   ├── functions.zsh
-│   └── network.zsh
-└── README.md
+├── fastfetch/    Fastfetch config and dynamic logo template
+├── kitty/        Kitty terminal config
+├── niri/         Niri compositor and Noctalia integration
+├── nvim/         Neovim config managed with lazy.nvim
+├── starship/     Starship prompt
+├── zsh/          Zsh startup, aliases, functions, and networking helpers
+├── elx/          elx file-listing config
+├── bututor/      GitButler interactive terminal cheatsheet
+├── gitutor/      Git interactive terminal cheatsheet
+├── nvimtutor/    Neovim interactive terminal cheatsheet
+└── zshtutor/     Zsh interactive terminal cheatsheet
+```
+
+These are personal files, not a universal installer. Review paths and settings before linking them into `~/.config`.
+
+## Fastfetch
+
+The Fastfetch config depends on two small external utilities:
+
+- [`desktop-stack`](https://github.com/rozeraf/desktop-stack) detects the active compositor, desktop shell, bar, and related services.
+- [`wallfetch`](https://github.com/rozeraf/wallfetch) extracts an ordered palette from the current Noctalia wallpaper and renders the five-color ANSI logo.
+
+Install both before using `fastfetch/config.jsonc`:
+
+```bash
+git clone https://github.com/rozeraf/desktop-stack.git ~/projects/desktop-stack
+cargo build --release --manifest-path ~/projects/desktop-stack/Cargo.toml
+install -Dm755 ~/projects/desktop-stack/target/release/desktop-stack ~/.local/bin/desktop-stack
+
+git clone https://github.com/rozeraf/wallfetch.git ~/projects/wallfetch
+make -C ~/projects/wallfetch PREFIX="$HOME/.local" install
+```
+
+Then link or copy the config and logo template:
+
+```bash
+mkdir -p ~/.config/fastfetch
+ln -sfn "$PWD/fastfetch/config.jsonc" ~/.config/fastfetch/config.jsonc
+ln -sfn "$PWD/fastfetch/logo" ~/.config/fastfetch/logo
+```
+
+The config intentionally remains strict JSON despite the `.jsonc` extension. Noctalia's Fastfetch community template merges generated UI colors with `jq`, so comments and trailing commas would break theme updates. Dependency links therefore live here rather than as comments in the config.
+
+Fastfetch calls both tools through command modules:
+
+```text
+fastfetch
+├── wallfetch → wallpaper hash → cached ANSI logo in /tmp
+└── desktop-stack → cached desktop/session description
+```
+
+Noctalia may continue updating title, key, and percentage colors. Logo colors bypass that generated palette and come directly from the wallpaper through `wallfetch`.
+
+## Shell
+
+The Zsh configuration does not use Oh My Zsh. It loads system packages directly:
+
+- zsh-autosuggestions;
+- zsh-history-substring-search;
+- zsh-syntax-highlighting;
+- fzf and fzf-tab;
+- zoxide;
+- Starship.
+
+Notable aliases:
+
+```text
+ff       fastfetch
+ls       elx
+la       elx -la
+ll       elx -l
+tree     elx --tree
+i        sudo pacman -S
+zi       interactive zoxide query
 ```
 
 ## Neovim
 
-Requires Neovim >= 0.10. Plugins are managed by [Lazy.nvim](https://github.com/folke/lazy.nvim) and install automatically on first launch.
+Neovim plugins are managed by [lazy.nvim](https://github.com/folke/lazy.nvim) and bootstrap on first launch. The configuration includes Telescope, Treesitter, LSP/Mason, completion, formatting, Oil, ToggleTerm, Noice, Which-key, Git integrations, and Catppuccin.
 
-**Plugins:**
+Main mappings use `Space` as leader:
 
-| Plugin | Purpose |
-|---|---|
-| catppuccin-mocha | colorscheme |
-| telescope.nvim | fuzzy finder, project search |
-| oil.nvim | file manager as a buffer |
-| grug-far.nvim | project-wide search & replace (ripgrep) |
-| nvim-treesitter | syntax highlighting, indentation |
-| nvim-lspconfig + mason | LSP (lua, python, typescript) |
-| conform.nvim | format on save (prettier, stylua, black) |
-| leap.nvim | jump anywhere on screen |
-| vim-surround | surround text objects |
-| vim-commentary | toggle comments |
-| targets.vim | extended text objects |
-| vim-fugitive | Git integration |
-| noice.nvim | improved UI for messages and LSP |
-| which-key.nvim | keybinding hints |
-| lualine.nvim | statusline |
-| fidget.nvim | LSP progress indicator |
-| vim-illuminate | highlight word under cursor |
-
-**Key mappings (leader = Space):**
-
-```
--             open oil (parent directory)
+```text
+-             open Oil
 <leader>ff    find files
-<leader>fg    live grep (search in project)
+<leader>fg    live grep
 <leader>fb    buffers
 <leader>fr    recent files
-<leader>sr    search & replace (word under cursor)
-<leader>sR    search & replace (empty)
-<leader>y/p   yank/paste to system clipboard
+<leader>sr    project search and replace
+<leader>y/p   system clipboard yank/paste
 <leader>d     cut to system clipboard
 ```
 
-## nvimtutor
+## Tutors
 
-Interactive terminal cheatsheet for Neovim keybindings and plugins.
+The repository contains four ncurses-style terminal cheatsheets. Build all of them from the repository root:
 
-```zsh
-cd dotfiles/nvimtutor
-make
-sudo make install      # installs to /usr/local/bin/nvimtutor
+```bash
+make build
 ```
 
-Then run anywhere:
+Or select one:
 
-```zsh
-nvimtutor
+```bash
+make build gitutor
+make install nvimtutor
 ```
 
-Covers: navigation, editing, text objects, search & replace, buffers/windows, project/directory workflow, plugins, LSP, Telescope.
+Available targets are `bututor`, `gitutor`, `nvimtutor`, and `zshtutor`. Run `make help` for the complete interface.
 
-## bututor
+## Base dependencies
 
-Interactive terminal cheatsheet for the GitButler CLI: workspace model, CLI IDs,
-selective commits, stacks, history editing, pull requests, conflicts, and oplog.
+Typical packages for this setup:
 
-```zsh
-cd dotfiles/bututor
-make
-./bututor
-sudo make install      # installs to /usr/local/bin/bututor
+```bash
+sudo pacman -S --needed base-devel git neovim zsh starship fastfetch \
+  ripgrep fd fzf bat zoxide wl-clipboard kitty \
+  zsh-autosuggestions zsh-history-substring-search zsh-syntax-highlighting \
+  ttf-nerd-fonts-symbols-common
 ```
 
-Navigation follows the other tutors: `j`/`k`, `Enter`/`l`, `h`/`q`, `gg`, and `G`.
-
-## zsh
-
-**Plugins:** git, zsh-autosuggestions, zsh-syntax-highlighting, fzf-tab, history-substring-search, you-should-use
-
-**Notable aliases:**
-
-```zsh
-i               sudo pacman -S --needed
-fnvim           fzf | xargs nvim  (fuzzy open file in nvim)
-tree            lsd --tree
-ll              lsd -l
-la              lsd -A
-cat             bat
-grep            rg
-find            fd
-z               zoxide (smart cd)
-zi              zoxide query -i
-```
-
-**Functions:**
-
-| Function | Description |
-|---|---|
-| `backup [file\|dir]` | create timestamped backup as `.tar.gz` |
-| `weather [city]` | weather via wttr.in (default: Almaty) |
-| `ports [n]` | list listening ports, or specific port |
-| `killport <n>` | kill process on port |
-| `myip` | show external and local IP |
-| `pwdcopy` | copy current directory path to clipboard |
-| `qr <text>` | generate QR code in terminal |
-| `tn [dir]` | open Thunar in background |
-
-## Dependencies
-
-Install all at once:
-
-```zsh
-i base-devel neovim git ripgrep fd fzf lsd bat zoxide starship \
-  ttf-nerd-fonts-symbols-common wl-clipboard
-```
-git clone https://aur.archlinux.org/paru.git
-cd paru
-makepkg -si
-```
+Niri, Noctalia, `elx`, AUR helpers, language servers, and optional development tools are intentionally installed separately.
