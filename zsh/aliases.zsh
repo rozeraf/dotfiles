@@ -3,6 +3,9 @@
 # Fastfetch
 alias ff="fastfetch"
 
+# Neovide
+alias vide="neovide"
+
 # File tools
 alias ls='elx'
 alias la='elx -la'

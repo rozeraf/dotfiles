@@ -1,4 +1,4 @@
-# zshrc
+## zshrc
 
 # Environment
 
@@ -162,3 +162,4 @@ eval "$(starship init zsh)"
 # ------------------------------------------------------------
 
 source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+export GPG_TTY=$(tty)

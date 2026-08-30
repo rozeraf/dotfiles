@@ -4,19 +4,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Personal dotfiles for Arch Linux + Hyprland / Niri. Components:
+Personal dotfiles for an Artix/Arch Linux desktop built around Niri and
+Noctalia. Components:
 
 - `niri/` — Niri scrollable tiling compositor config
+- `noctalia/` — Noctalia user settings
 - `nvim/` — Neovim config (`init.lua`, Lazy.nvim plugin manager)
-- `zsh/` — zsh config (`.zshrc`, `aliases.zsh`, `functions.zsh`, `network.zsh`)
-- `kitty/` — Kitty terminal config
+- `zsh/` — Zsh config (`.zshrc`, `aliases.zsh`, `functions.zsh`)
+- `ghostty/` — Ghostty terminal config, GTK CSS, and Noctalia theme
+- `fastfetch/` — Fastfetch config and wallpaper-derived logo
+- `elx/` — elx file-listing config
 - `starship/` — Starship prompt config
 
 ## Build & Install
 
 ### Neovim
 
-Plugins install automatically via Lazy.nvim on first launch. Requires Neovim >= 0.10.
+Plugins install automatically via Lazy.nvim on first launch. The configuration
+targets Neovim 0.12 or newer.
 
 ## Architecture Notes
 
@@ -28,15 +33,18 @@ Single-file config. Structure:
 3. Global keymaps (leader = Space)
 4. `require("lazy").setup({...})` — all plugins defined inline
 
-Key behavior: `d`/`x`/`dd` delete to void register (not clipboard); `<leader>d` cuts to system clipboard. This is intentional.
+Key behavior: normal `d`, `y`, `x`, and `p` operations use the system clipboard.
+Other operators, including `c` and `s`, retain normal Vim register behavior.
 
 ### zsh
 
-`.zshrc` sources the other files. `aliases.zsh` overrides system commands: `cat`→`bat`, `grep`→`rg`, `find`→`fd`, `ls`→`lsd`.
+`.zshrc` sources `aliases.zsh` and `functions.zsh`. File-listing aliases use
+`elx`; the shell also initializes fzf-tab, zoxide, Starship, autosuggestions,
+history substring search, and syntax highlighting.
 
 ## Dependencies
 
 ```zsh
-sudo pacman -S base-devel neovim git ripgrep fd fzf lsd bat zoxide starship \
-  ttf-nerd-fonts-symbols-common wl-clipboard
+sudo pacman -S base-devel neovim git ripgrep fd fzf bat zoxide starship \
+  fastfetch ghostty ttf-nerd-fonts-symbols-common wl-clipboard
 ```

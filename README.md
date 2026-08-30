@@ -8,7 +8,7 @@ Personal configuration for an Artix/Arch Linux desktop built around Niri and Noc
 - **Compositor:** Niri
 - **Desktop shell:** Noctalia Shell
 - **Shell:** Zsh with Starship
-- **Terminal:** Kitty
+- **Terminal:** Ghostty
 - **Editor:** Neovim
 - **CLI tools:** `elx`, `fzf`, `ripgrep`, `fd`, `bat`, `zoxide`
 
@@ -17,11 +17,12 @@ Personal configuration for an Artix/Arch Linux desktop built around Niri and Noc
 ```text
 dotfiles/
 ├── fastfetch/    Fastfetch config and dynamic logo template
-├── kitty/        Kitty terminal config
+├── ghostty/      Ghostty terminal config, GTK styling, and generated theme
 ├── niri/         Niri compositor and Noctalia integration
+├── noctalia/     Noctalia user settings
 ├── nvim/         Neovim config managed with lazy.nvim
 ├── starship/     Starship prompt
-├── zsh/          Zsh startup, aliases, functions, and networking helpers
+├── zsh/          Zsh startup, aliases, and functions
 └── elx/          elx file-listing config
 ```
 
@@ -39,7 +40,7 @@ Install both before using `fastfetch/config.jsonc`:
 ```bash
 git clone https://github.com/rozeraf/desktop-stack.git ~/projects/desktop-stack
 cargo build --release --manifest-path ~/projects/desktop-stack/Cargo.toml
-install -Dm755 ~/projects/desktop-stack/target/release/desktop-stack ~/.local/bin/desktop-stack
+sudo install -Dm755 ~/projects/desktop-stack/target/release/desktop-stack /usr/local/bin/desktop-stack
 
 git clone https://github.com/rozeraf/wallfetch.git ~/projects/wallfetch
 make -C ~/projects/wallfetch PREFIX="$HOME/.local" install
@@ -80,6 +81,7 @@ Notable aliases:
 
 ```text
 ff       fastfetch
+vide     neovide
 ls       elx
 la       elx -la
 ll       elx -l
@@ -101,8 +103,7 @@ Main mappings use `Space` as leader:
 <leader>fb    buffers
 <leader>fr    recent files
 <leader>sr    project search and replace
-<leader>y/p   system clipboard yank/paste
-<leader>d     cut to system clipboard
+d/y/x/p       use the system clipboard
 ```
 
 ## Tutors
@@ -116,7 +117,7 @@ Typical packages for this setup:
 
 ```bash
 sudo pacman -S --needed base-devel git neovim zsh starship fastfetch \
-  ripgrep fd fzf bat zoxide wl-clipboard kitty \
+  ripgrep fd fzf bat zoxide wl-clipboard ghostty \
   zsh-autosuggestions zsh-history-substring-search zsh-syntax-highlighting \
   ttf-nerd-fonts-symbols-common
 ```

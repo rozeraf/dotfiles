@@ -1,27 +1,44 @@
 {
   "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
-
   "display": {
-    "separator": ""
+    "separator": "",
+    "color": {
+      "keys": "#cbbeff",
+      "title": "#cac3dc"
+    },
+    "percent": {
+      "color": {
+        "green": "#eeb8cb",
+        "yellow": "#cbbeff",
+        "red": "#ffb4ab"
+      }
+    }
   },
-
   "logo": {
-    "type": "none"
+    "type": "none",
+    "position": "top",
+    "padding": {
+      "top": 1,
+      "bottom": 0,
+      "left": 0,
+      "right": 0
+    },
+    "color": {
+      "1": "#cb63ff",
+      "2": "#ca63dc"
+    }
   },
-
   "modules": [
     {
       "type": "command",
       "key": " ",
-      "text": "~/.local/bin/wallfetch --render-logo",
+      "text": "/home/raf/.local/bin/wallfetch --render-logo",
       "format": "{result}"
     },
-
     {
       "type": "title",
       "format": "{##e7b4ff}{user-name}@{host-name}{#}"
     },
-
     {
       "type": "custom",
       "key": "├─ ",
@@ -29,28 +46,24 @@
       "outputColor": "cyan",
       "format": "system/"
     },
-
     {
       "type": "os",
       "key": "│  ├─ 󰣇  ",
       "keyColor": "cyan",
       "format": "{name} {##919191}{arch}{#}"
     },
-
     {
       "type": "kernel",
       "key": "│  ├─ 󰒓  ",
       "keyColor": "cyan",
       "format": "{release}"
     },
-
     {
       "type": "uptime",
       "key": "│  └─ 󰅐  ",
       "keyColor": "cyan",
       "format": "{formatted}"
     },
-
     {
       "type": "custom",
       "key": "├─ ",
@@ -58,15 +71,13 @@
       "outputColor": "blue",
       "format": "desktop/"
     },
-
     {
       "type": "command",
       "key": "│  └─ 󰇄  ",
       "keyColor": "blue",
-      "text": "DESKTOP_STACK_CACHE_TTL=30 ~/.local/bin/desktop-stack",
+      "text": "DESKTOP_STACK_CACHE_TTL=30 /usr/local/bin/desktop-stack",
       "format": "{result}"
     },
-
     {
       "type": "custom",
       "key": "├─ ",
@@ -74,21 +85,18 @@
       "outputColor": "magenta",
       "format": "shell/"
     },
-
     {
       "type": "terminal",
       "key": "│  ├─ 󰄛  ",
       "keyColor": "magenta",
       "format": "{pretty-name} {##919191}{version}{#}"
     },
-
     {
       "type": "shell",
       "key": "│  └─   ",
       "keyColor": "magenta",
       "format": "{pretty-name} {##919191}{version}{#}"
     },
-
     {
       "type": "custom",
       "key": "├─ ",
@@ -96,14 +104,12 @@
       "outputColor": "yellow",
       "format": "hardware/"
     },
-
     {
       "type": "cpu",
       "key": "│  ├─   ",
       "keyColor": "yellow",
       "format": "{name}"
     },
-
     {
       "type": "gpu",
       "key": "│  ├─ 󰢮  ",
@@ -111,14 +117,12 @@
       "driverSpecific": true,
       "format": "{name}"
     },
-
     {
       "type": "memory",
       "key": "│  └─   ",
       "keyColor": "yellow",
       "format": "{used} / {total} {##919191}({percentage}){#}"
     },
-
     {
       "type": "custom",
       "key": "├─ ",
@@ -126,14 +130,12 @@
       "outputColor": "green",
       "format": "storage/"
     },
-
     {
       "type": "disk",
       "key": "│  └─   ",
       "keyColor": "green",
       "format": "{mountpoint} {size-used} / {size-total} {##919191}({size-percentage}){#}"
     },
-
     {
       "type": "custom",
       "key": "└─ ",
@@ -141,31 +143,25 @@
       "outputColor": "blue",
       "format": "network/"
     },
-
     {
       "type": "localip",
       "key": "   ├─ 󰩟  ",
       "keyColor": "blue",
-
       "showIpv4": true,
       "showIpv6": false,
       "showPrefixLen": false,
       "defaultRouteOnly": true,
-
       "format": "{ipv4}"
     },
-
     {
       "type": "localip",
       "key": "   └─ 󰖩  ",
       "keyColor": "blue",
-
       "showIpv4": true,
       "showIpv6": false,
       "showPrefixLen": false,
       "defaultRouteOnly": false,
       "namePrefix": "tailscale",
-
       "format": "{ipv4}"
     }
   ]

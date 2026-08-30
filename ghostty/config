@@ -1,0 +1,89 @@
+# ============================================================
+# GHOSTTY
+# ============================================================
+
+
+# ------------------------------------------------------------
+# THEME
+# ------------------------------------------------------------
+
+
+# Overrides
+background = 101010
+foreground = D8D2D8
+
+background-opacity = 0.88
+
+
+# ------------------------------------------------------------
+# FONT
+# ------------------------------------------------------------
+
+font-family = Monaspace Neon NF
+font-style = Medium
+font-size = 12.5
+font-codepoint-map = U+0024=JetBrainsMono Nerd Font
+# Programming ligatures
+font-feature = calt
+font-feature = liga
+
+# Makes tab/window titles use the same font instead of GTK font
+window-title-font-family = Monaspace Neon NF
+
+
+# ------------------------------------------------------------
+# CURSOR
+# ------------------------------------------------------------
+
+cursor-color = D787FF
+cursor-text = 101010
+
+cursor-style = block
+cursor-style-blink = false
+
+
+# ------------------------------------------------------------
+# SELECTION
+# ------------------------------------------------------------
+
+selection-background = 43284D
+selection-foreground = FFFFFF
+
+
+# ------------------------------------------------------------
+# WINDOW
+# ------------------------------------------------------------
+
+# Slightly tighter than before.
+# 20x16 with 13.5pt font would feel unnecessarily spacious.
+window-padding-x = 14
+window-padding-y = 10
+window-padding-balance = true
+
+window-decoration = none
+
+mouse-hide-while-typing = true
+
+
+# ------------------------------------------------------------
+# GTK
+# ------------------------------------------------------------
+
+gtk-titlebar = false
+
+# Hide tab bar when there is only one tab.
+window-show-tab-bar = auto
+gtk-tabs-location = top
+
+# Don't stretch tabs across the entire window.
+gtk-wide-tabs = false
+
+gtk-toolbar-style = flat
+
+gtk-custom-css = ~/.config/ghostty/gtk.css
+
+custom-shader = shaders/cursor_tail.glsl
+custom-shader-animation = true
+keybind = ctrl+shift+c=copy_to_clipboard:plain
+confirm-close-surface = false
+theme = noctalia
