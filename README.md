@@ -57,6 +57,11 @@ locally signs it with `pacman-key`. Existing unrelated Pacman settings and
 repository blocks are kept, and the old `/etc/pacman.conf` is backed up before
 replacement.
 
+On Artix, the installer replaces the package-provided Arch mirror list with a
+small ordered set of HTTPS mirrors so Pacman can fail over when one endpoint is
+slow. Failed package transactions are refreshed and retried once; completed
+downloads remain in Pacman's cache.
+
 If repository setup is declined, `/etc/pacman.conf` is left untouched. The
 installer retains the fallback plan: on Artix it installs `noctalia-git` with
 `paru` and builds the personal Rust tools from their source repositories. If

@@ -80,6 +80,8 @@ output=$(HOME=$TEST_ROOT "$REPO_DIR/install.sh" \
 	--yes)
 [[ $output == *"artix-archlinux-support"* ]] || fail "Artix compatibility support was not planned"
 [[ $output == *"00-block-systemd.hook"* ]] || fail "systemd protection hook was not planned"
+[[ $output == *"pacman/mirrorlist-arch /etc/pacman.d/mirrorlist-arch"* ]] || \
+	fail "resilient Arch mirror list was not planned"
 [[ $output == *"rozeraf-repo-key.asc"* ]] || fail "raf signing key download was not planned"
 [[ $output == *"pacman-key --add"* ]] || fail "raf signing key import was not planned"
 [[ $output == *"pacman-key --lsign-key 8180ACCD03D345F7681D2D37DDCE5997AEB9743D"* ]] || \

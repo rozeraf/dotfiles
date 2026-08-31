@@ -185,11 +185,6 @@ register_raf_key() {
 	local fingerprint=8180ACCD03D345F7681D2D37DDCE5997AEB9743D
 	local key_url=https://github.com/rozeraf/raf-repo/releases/download/x86_64/rozeraf-repo-key.asc
 
-	confirm "Download and locally trust the raf repository signing key?" || {
-		warn "raf key registration declined"
-		return 1
-	}
-
 	log "register raf repository signing key"
 	if $DRY_RUN; then
 		print_command curl -fL -o rozeraf-repo-key.asc "$key_url"
@@ -214,6 +209,28 @@ register_raf_key() {
 	rm -rf -- "$key_dir"
 }
 
+install_system_file() {
+	local source=$1 target=$2 backup_relative backup
+	if cmp -s -- "$source" "$target"; then
+		SKIPPED+=("$target")
+		return 0
+	fi
+
+	backup_relative=${target#/}
+	backup="$BACKUP_DIR/$backup_relative"
+	if [[ -e $target || -L $target ]]; then
+		log "back up $target -> $backup"
+		if ! $DRY_RUN; then
+			mkdir -p -- "$(dirname -- "$backup")"
+			cp -a -- "$target" "$backup"
+		fi
+		BACKUP_USED=true
+		BACKED_UP+=("$target")
+	fi
+	run sudo install -Dm644 "$source" "$target"
+	INSTALLED+=("$target")
+}
+
 configure_repositories() {
 	$USE_ADDITIONAL_REPOS || return 0
 	local repository_file="$SCRIPT_DIR/pacman/repositories-$PLATFORM.conf"
@@ -221,20 +238,29 @@ configure_repositories() {
 	rendered=$(mktemp)
 
 	log "configure Pacman repositories for $PLATFORM"
-	if ! register_raf_key; then
+	if ! confirm "Download and locally trust the raf repository signing key?"; then
 		USE_ADDITIONAL_REPOS=false
 		rm -f -- "$rendered"
-		warn "additional repositories skipped; using AUR and source-build fallbacks"
+		warn "raf key registration declined; using AUR and source-build fallbacks"
 		return 0
 	fi
 
+	local bootstrap_packages=(curl ca-certificates gnupg)
 	if [[ $PLATFORM == artix ]]; then
-		print_command sudo pacman -Syu --needed artix-archlinux-support
-		if ! $DRY_RUN; then
+		bootstrap_packages+=(artix-archlinux-support)
+	fi
+	print_command sudo pacman -Syu --needed "${bootstrap_packages[@]}"
+	if ! $DRY_RUN; then
+		if [[ $PLATFORM == artix ]]; then
 			pacman -Si artix-archlinux-support >/dev/null 2>&1 || die "Artix repository does not provide artix-archlinux-support"
-			sudo pacman -Syu --needed --noconfirm artix-archlinux-support
 		fi
+		sudo pacman -Syu --needed --noconfirm "${bootstrap_packages[@]}"
+	fi
+
+	register_raf_key
+	if [[ $PLATFORM == artix ]]; then
 		run sudo install -Dm644 "$SCRIPT_DIR/pacman/hooks/00-block-systemd.hook" "/etc/pacman.d/hooks/00-block-systemd.hook"
+		install_system_file "$SCRIPT_DIR/pacman/mirrorlist-arch" "/etc/pacman.d/mirrorlist-arch"
 	fi
 	if [[ $PLATFORM == artix ]]; then
 		awk -f "$SCRIPT_DIR/pacman/strip-managed-repositories.awk" /etc/pacman.conf > "$rendered"
@@ -472,7 +498,22 @@ install_repo_packages() {
 		return 0
 	fi
 	verify_repo_packages
-	run sudo pacman -Syu --needed --noconfirm "${REPO_PACKAGES[@]}"
+	if $DRY_RUN; then
+		print_command sudo pacman -Syu --needed --noconfirm "${REPO_PACKAGES[@]}"
+		return 0
+	fi
+
+	local attempt
+	for attempt in 1 2; do
+		if sudo pacman -Syu --needed --noconfirm "${REPO_PACKAGES[@]}"; then
+			return 0
+		fi
+		if ((attempt == 1)); then
+			warn "Pacman transaction failed; refreshing databases and retrying once with cached downloads"
+			sudo pacman -Syy --noconfirm
+		fi
+	done
+	die "Pacman package installation failed after two attempts"
 }
 
 ensure_paru() {
