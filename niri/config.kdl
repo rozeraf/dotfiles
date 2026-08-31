@@ -12,7 +12,7 @@ input {
     keyboard {
         xkb {
             layout "us,ru"
-            options "grp:caps_toggle"
+            options "grp:caps_toggle,custom:reverse_tilde"
         }
 
         // Delay before held key starts repeating, ms.
@@ -308,7 +308,7 @@ binds {
     }
 
     Mod+W {
-        spawn "zen-browser"
+        spawn "/usr/sbin/zen-browser"
     }
 
     // Noctalia launcher
