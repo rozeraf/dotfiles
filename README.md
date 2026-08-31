@@ -50,8 +50,11 @@ The recommended repository mode adds `[raf]` before `[extra]`. On Artix it also
 installs `artix-archlinux-support`, enables Arch's mirror list, and installs a
 pre-transaction hook that refuses Arch `systemd` packages. Noctalia is then
 installed from `[extra]`; `elx`, `wallfetch`, and `desktop-stack` come from
-`[raf]`. Existing unrelated Pacman settings and repository blocks are kept,
-and the old `/etc/pacman.conf` is backed up before replacement.
+the signed `[raf]` repository. The installer asks before downloading its public
+key, verifies fingerprint `8180ACCD03D345F7681D2D37DDCE5997AEB9743D`, and
+locally signs it with `pacman-key`. Existing unrelated Pacman settings and
+repository blocks are kept, and the old `/etc/pacman.conf` is backed up before
+replacement.
 
 If repository setup is declined, `/etc/pacman.conf` is left untouched. The
 installer retains the fallback plan: on Artix it installs `noctalia-git` with

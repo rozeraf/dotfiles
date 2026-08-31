@@ -173,6 +173,39 @@ choose_repositories() {
 	return 0
 }
 
+register_raf_key() {
+	local fingerprint=8180ACCD03D345F7681D2D37DDCE5997AEB9743D
+	local key_url=https://github.com/rozeraf/raf-repo/releases/download/x86_64/rozeraf-repo-key.asc
+
+	confirm "Download and locally trust the raf repository signing key?" || {
+		warn "raf key registration skipped; signed raf packages cannot be installed until the key is trusted"
+		return 0
+	}
+
+	log "register raf repository signing key"
+	if $DRY_RUN; then
+		print_command curl -fL -o rozeraf-repo-key.asc "$key_url"
+		print_command gpg --show-keys --with-colons rozeraf-repo-key.asc
+		print_command sudo pacman-key --add rozeraf-repo-key.asc
+		print_command sudo pacman-key --lsign-key "$fingerprint"
+		return 0
+	fi
+
+	local key_dir key_file downloaded_fingerprint
+	key_dir=$(mktemp -d)
+	key_file="$key_dir/rozeraf-repo-key.asc"
+	curl -fL -o "$key_file" "$key_url"
+	downloaded_fingerprint=$(gpg --show-keys --with-colons "$key_file" 2>/dev/null | \
+		awk -F: '$1 == "fpr" { print $10; exit }')
+	if [[ $downloaded_fingerprint != "$fingerprint" ]]; then
+		rm -rf -- "$key_dir"
+		die "raf signing key fingerprint mismatch: expected $fingerprint, got ${downloaded_fingerprint:-none}"
+	fi
+	sudo pacman-key --add "$key_file"
+	sudo pacman-key --lsign-key "$fingerprint"
+	rm -rf -- "$key_dir"
+}
+
 configure_repositories() {
 	$USE_ADDITIONAL_REPOS || return 0
 	local repository_file="$SCRIPT_DIR/pacman/repositories-$PLATFORM.conf"
@@ -188,6 +221,7 @@ configure_repositories() {
 		fi
 		run sudo install -Dm644 "$SCRIPT_DIR/pacman/hooks/00-block-systemd.hook" "/etc/pacman.d/hooks/00-block-systemd.hook"
 	fi
+	register_raf_key
 
 	if [[ $PLATFORM == artix ]]; then
 		awk -f "$SCRIPT_DIR/pacman/strip-managed-repositories.awk" /etc/pacman.conf > "$rendered"
