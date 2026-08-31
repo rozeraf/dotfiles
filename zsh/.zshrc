@@ -163,3 +163,4 @@ eval "$(starship init zsh)"
 
 source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 export GPG_TTY=$(tty)
+export SSH_AUTH_SOCK="/run/user/$(id -u)/ssh-agent.sock"
