@@ -1,0 +1,23 @@
+context.modules = [
+    {
+        name = libpipewire-module-parametric-equalizer
+        args = {
+            equalizer.filepath = "/home/raf/.config/pipewire/bass-eq.txt"
+            equalizer.description = "Bass EQ"
+
+            audio.channels = 2
+            audio.position = [ FL FR ]
+
+            capture.props = {
+                node.name = "bass_eq"
+                media.class = "Audio/Sink"
+                monitor.channel-volumes = true
+            }
+
+            playback.props = {
+                node.name = "bass_eq_output"
+                node.passive = true
+            }
+        }
+    }
+]

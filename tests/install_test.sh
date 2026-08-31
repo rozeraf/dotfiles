@@ -127,4 +127,16 @@ output=$(HOME=$TEST_ROOT "$REPO_DIR/install.sh" \
 [[ $output == *"$REPO_DIR/starship/starship.toml"* ]] || fail "Zsh component did not deploy the Starship config"
 [[ $output == *"github.com/Aloxaf/fzf-tab.git"* ]] || fail "Zsh component did not clone fzf-tab"
 
+printf 'test: PipeWire component plan\n'
+output=$(HOME=$TEST_ROOT "$REPO_DIR/install.sh" \
+	--platform artix \
+	--components pipewire \
+	--without-repositories \
+	--dry-run \
+	--yes)
+for package in pipewire wireplumber pipewire-pulse pipewire-alsa pipewire-jack; do
+	[[ $output == *" $package"* ]] || fail "$package was not included in the PipeWire package plan"
+done
+[[ $output == *"90-mchose-bass-eq.conf"* ]] || fail "WirePlumber EQ config was not deployed"
+
 printf 'PASS\n'

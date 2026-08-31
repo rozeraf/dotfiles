@@ -3,7 +3,7 @@
 set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
-ALL_COMPONENTS=(niri noctalia ghostty nvim zsh starship fastfetch elx tutors)
+ALL_COMPONENTS=(niri noctalia pipewire ghostty nvim zsh starship fastfetch elx tutors)
 
 PLATFORM=""
 DRY_RUN=false
@@ -41,7 +41,7 @@ Options:
   --help, -h                Show this help
 
 Components:
-  niri noctalia ghostty nvim zsh starship fastfetch elx tutors
+  niri noctalia pipewire ghostty nvim zsh starship fastfetch elx tutors
 
 Examples:
   ./install.sh
@@ -334,6 +334,9 @@ select_components() {
 	if [[ ${SELECTED[zsh]:-} ]]; then
 		SELECTED[starship]=1
 	fi
+	if [[ ${SELECTED[noctalia]:-} ]]; then
+		SELECTED[pipewire]=1
+	fi
 }
 
 add_unique() {
@@ -357,7 +360,7 @@ resolve_packages() {
 	fi
 
 	if [[ ${SELECTED[noctalia]:-} ]]; then
-		for package in brightnessctl playerctl cliphist imagemagick jq pipewire wireplumber polkit grim slurp tesseract tesseract-data-eng; do
+		for package in brightnessctl playerctl cliphist imagemagick jq polkit grim slurp tesseract tesseract-data-eng; do
 			add_unique REPO_PACKAGES "$package"
 		done
 		if [[ $PLATFORM == arch || $USE_ADDITIONAL_REPOS == true ]]; then
@@ -365,6 +368,12 @@ resolve_packages() {
 		else
 			add_unique AUR_PACKAGES noctalia-git
 		fi
+	fi
+
+	if [[ ${SELECTED[pipewire]:-} ]]; then
+		for package in pipewire wireplumber pipewire-pulse pipewire-alsa pipewire-jack; do
+			add_unique REPO_PACKAGES "$package"
+		done
 	fi
 
 	if [[ ${SELECTED[ghostty]:-} ]]; then
@@ -545,6 +554,11 @@ deploy_component() {
 		noctalia)
 			$action "$SCRIPT_DIR/noctalia/settings.toml" "$HOME/.config/noctalia/settings.toml"
 			if ! $UNINSTALL; then run mkdir -p "$HOME/Pictures/Wallpapers"; fi
+			;;
+		pipewire)
+			$action "$SCRIPT_DIR/pipewire/bass-eq.txt" "$HOME/.config/pipewire/bass-eq.txt"
+			$action "$SCRIPT_DIR/pipewire/pipewire.conf.d/bass-eq.conf.disabled" "$HOME/.config/pipewire/pipewire.conf.d/bass-eq.conf.disabled"
+			$action "$SCRIPT_DIR/pipewire/wireplumber.conf.d/90-mchose-bass-eq.conf" "$HOME/.config/wireplumber/wireplumber.conf.d/90-mchose-bass-eq.conf"
 			;;
 		ghostty)
 			$action "$SCRIPT_DIR/ghostty/config" "$HOME/.config/ghostty/config"

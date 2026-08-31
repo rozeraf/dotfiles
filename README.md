@@ -23,6 +23,7 @@ dotfiles/
 ├── noctalia/     Noctalia user settings
 ├── nvim/         Neovim config managed with lazy.nvim
 ├── pacman/       Managed repository blocks and Artix protection hook
+├── pipewire/      PipeWire and WirePlumber bass EQ settings
 ├── starship/     Starship prompt
 ├── wallfetch/    Independent palette provider config and template
 ├── tests/        Isolated installer tests
@@ -63,7 +64,7 @@ installer retains the fallback plan: on Artix it installs `noctalia-git` with
 `base-devel` and Git.
 
 The full setup includes Niri, Noctalia, Ghostty, Neovim, Zsh, Starship,
-Fastfetch, fonts and Wayland utilities. It can also clone, build, and install
+PipeWire, Fastfetch, fonts and Wayland utilities. It can also clone, build, and install
 `fzf-tab` and the three programs from
 [`rozeraf/tutors`](https://github.com/rozeraf/tutors). User-built binaries are
 installed into `~/.local/bin`. The three personal tools are built this way only
@@ -108,6 +109,14 @@ or hooks, user data, or unrelated files.
 ```
 
 Run `./install.sh --help` for all options.
+
+## PipeWire
+
+The `pipewire` component installs PipeWire, its PulseAudio, ALSA and JACK
+compatibility layers, and WirePlumber. Its active WirePlumber drop-in applies a
+parametric bass EQ to the MCHOSE V9 Pro USB output using
+`pipewire/bass-eq.txt`. The older standalone PipeWire EQ module is retained as
+`bass-eq.conf.disabled` for reference and is not loaded.
 
 ## Fastfetch
 
