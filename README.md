@@ -157,6 +157,10 @@ The Zsh configuration does not use Oh My Zsh. It loads system packages directly:
 - zoxide;
 - Starship.
 
+Selecting the `zsh` installer component also selects the Starship package and
+config, and clones `fzf-tab` into `~/.local/share/zsh/fzf-tab`. This core shell
+setup is installed even with `--no-extras`.
+
 Notable aliases:
 
 ```text

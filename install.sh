@@ -295,6 +295,11 @@ select_components() {
 		SELECTED[$component]=1
 	done
 	((${#SELECTED[@]})) || die "no components selected"
+
+	# Starship and its repository-managed config are part of the Zsh setup.
+	if [[ ${SELECTED[zsh]:-} ]]; then
+		SELECTED[starship]=1
+	fi
 }
 
 add_unique() {
@@ -550,10 +555,6 @@ ensure_repo() {
 install_source_tools() {
 	local projects_dir=${PROJECTS_DIR:-$HOME/projects}
 
-	if [[ ${SELECTED[zsh]:-} ]]; then
-		ensure_repo https://github.com/Aloxaf/fzf-tab.git "$HOME/.local/share/zsh/fzf-tab"
-	fi
-
 	if [[ ${SELECTED[fastfetch]:-} ]] && ! $USE_ADDITIONAL_REPOS; then
 		ensure_repo https://github.com/rozeraf/wallfetch.git "$projects_dir/wallfetch"
 		run make -C "$projects_dir/wallfetch" PREFIX="$HOME/.local" install
@@ -578,6 +579,11 @@ install_source_tools() {
 		if $DRY_RUN || command -v cargo >/dev/null 2>&1; then run cargo install --locked stylua; fi
 		if $DRY_RUN || command -v bun >/dev/null 2>&1; then run bun add --global prettier; fi
 	fi
+}
+
+install_zsh_integrations() {
+	[[ ${SELECTED[zsh]:-} ]] || return 0
+	ensure_repo https://github.com/Aloxaf/fzf-tab.git "$HOME/.local/share/zsh/fzf-tab"
 }
 
 set_default_shell() {
@@ -623,6 +629,7 @@ main() {
 		resolve_packages
 		install_repo_packages
 		install_aur_packages
+		install_zsh_integrations
 	fi
 
 	local component

@@ -111,4 +111,16 @@ grep -Fq '[[ -r "$HOME/.local/share/zsh/fzf-tab/fzf-tab.plugin.zsh" ]]' "$REPO_D
 grep -Fq 'if (( $+commands[starship] )); then' "$REPO_DIR/zsh/.zshrc" || \
 	fail "Starship is initialized without a command check"
 
+printf 'test: complete Zsh component plan\n'
+output=$(HOME=$TEST_ROOT "$REPO_DIR/install.sh" \
+	--platform artix \
+	--components zsh \
+	--without-repositories \
+	--no-extras \
+	--dry-run \
+	--yes)
+[[ $output == *" starship"* ]] || fail "Zsh component did not include the Starship package"
+[[ $output == *"$REPO_DIR/starship/starship.toml"* ]] || fail "Zsh component did not deploy the Starship config"
+[[ $output == *"github.com/Aloxaf/fzf-tab.git"* ]] || fail "Zsh component did not clone fzf-tab"
+
 printf 'PASS\n'
