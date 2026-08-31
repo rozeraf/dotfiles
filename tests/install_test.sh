@@ -134,9 +134,59 @@ output=$(HOME=$TEST_ROOT "$REPO_DIR/install.sh" \
 	--without-repositories \
 	--dry-run \
 	--yes)
-for package in pipewire wireplumber pipewire-pulse pipewire-alsa pipewire-jack; do
+for package in pipewire wireplumber pipewire-pulse pipewire-alsa; do
 	[[ $output == *" $package"* ]] || fail "$package was not included in the PipeWire package plan"
 done
+[[ $output != *" pipewire-jack"* ]] || fail "conflict-prone JACK replacement was included by default"
 [[ $output == *"90-mchose-bass-eq.conf"* ]] || fail "WirePlumber EQ config was not deployed"
+for service in pipewire pipewire-pulse wireplumber; do
+	[[ $output == *".config/dinit.d/boot.d/$service"* ]] || fail "$service Dinit activation was not planned"
+	[[ $output == *"dinitctl --user start $service"* ]] || fail "$service start was not planned"
+done
+
+printf 'test: PipeWire Arch service plan\n'
+output=$(HOME=$TEST_ROOT "$REPO_DIR/install.sh" \
+	--platform arch \
+	--components pipewire \
+	--with-repositories \
+	--dry-run \
+	--yes)
+[[ $output == *"systemctl --user enable pipewire.service pipewire-pulse.service wireplumber.service"* ]] || \
+	fail "PipeWire systemd enablement was not planned"
+[[ $output == *"systemctl --user start pipewire.service pipewire-pulse.service wireplumber.service"* ]] || \
+	fail "PipeWire systemd start was not planned"
+
+printf 'test: Noctalia state directory layout\n'
+noctalia_home="$TEST_ROOT/noctalia-home"
+mkdir -p -- "$noctalia_home"
+HOME=$noctalia_home "$REPO_DIR/install.sh" \
+	--platform artix \
+	--components noctalia \
+	--no-packages \
+	--no-extras \
+	--yes >/dev/null
+[[ -d $noctalia_home/.config/noctalia && ! -L $noctalia_home/.config/noctalia ]] || \
+	fail "Noctalia config was not copied as a regular directory"
+diff -qr "$REPO_DIR/noctalia" "$noctalia_home/.config/noctalia" >/dev/null || \
+	fail "Noctalia config copy differs from the repository defaults"
+[[ -L $noctalia_home/.local/state/noctalia ]] || fail "Noctalia state directory was not linked"
+[[ $(realpath -- "$noctalia_home/.local/state/noctalia") == "$noctalia_home/.config/noctalia" ]] || \
+	fail "Noctalia state link does not point to the config copy"
+output=$(HOME=$noctalia_home "$REPO_DIR/install.sh" \
+	--platform artix \
+	--components noctalia \
+	--no-packages \
+	--no-extras \
+	--yes)
+[[ $output == *"changed:  0"* && $output == *"backups:  0"* ]] || \
+	fail "repeated Noctalia setup was not idempotent"
+HOME=$noctalia_home "$REPO_DIR/install.sh" \
+	--platform artix \
+	--components noctalia \
+	--uninstall \
+	--yes >/dev/null
+[[ ! -e $noctalia_home/.local/state/noctalia && ! -L $noctalia_home/.local/state/noctalia ]] || \
+	fail "Noctalia state link survived uninstall"
+[[ ! -e $noctalia_home/.config/noctalia ]] || fail "unchanged Noctalia config copy survived uninstall"
 
 printf 'PASS\n'

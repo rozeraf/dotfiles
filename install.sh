@@ -78,6 +78,13 @@ run() {
 	fi
 }
 
+run_optional() {
+	print_command "$@"
+	if ! $DRY_RUN && ! "$@"; then
+		warn "command failed; setup will take effect on the next login: $*"
+	fi
+}
+
 confirm() {
 	local prompt=$1
 	if $ASSUME_YES; then
@@ -371,7 +378,7 @@ resolve_packages() {
 	fi
 
 	if [[ ${SELECTED[pipewire]:-} ]]; then
-		for package in pipewire wireplumber pipewire-pulse pipewire-alsa pipewire-jack; do
+		for package in pipewire wireplumber pipewire-pulse pipewire-alsa; do
 			add_unique REPO_PACKAGES "$package"
 		done
 	fi
@@ -499,8 +506,8 @@ relative_link_target() {
 }
 
 link_path() {
-	local source=$1 target=$2 relative current
-	[[ -e $source || -L $source ]] || die "missing repository path: $source"
+	local source=$1 target=$2 allow_missing=${3:-false} relative current
+	[[ -e $source || -L $source || $allow_missing == true ]] || die "missing repository path: $source"
 	relative=$(relative_link_target "$source" "$target")
 
 	if [[ -L $target ]]; then
@@ -543,6 +550,48 @@ unlink_path() {
 	fi
 }
 
+copy_directory() {
+	local source=$1 target=$2
+	[[ -d $source ]] || die "missing repository directory: $source"
+
+	if [[ -d $target && ! -L $target ]] && diff -qr -- "$source" "$target" >/dev/null 2>&1; then
+		SKIPPED+=("$target")
+		return 0
+	fi
+
+	if [[ -e $target || -L $target ]]; then
+		local backup_relative=${target#"$HOME"/}
+		local backup="$BACKUP_DIR/$backup_relative"
+		log "back up $target -> $backup"
+		if ! $DRY_RUN; then
+			mkdir -p -- "$(dirname -- "$backup")"
+			mv -- "$target" "$backup"
+		fi
+		BACKUP_USED=true
+		BACKED_UP+=("$target")
+	fi
+
+	if $DRY_RUN; then
+		print_command mkdir -p "$(dirname -- "$target")"
+		print_command cp -a "$source" "$target"
+	else
+		mkdir -p -- "$(dirname -- "$target")"
+		cp -a -- "$source" "$target"
+	fi
+	INSTALLED+=("$target")
+}
+
+remove_copied_directory() {
+	local source=$1 target=$2
+	if [[ -d $target && ! -L $target ]] && diff -qr -- "$source" "$target" >/dev/null 2>&1; then
+		run rm -r -- "$target"
+		INSTALLED+=("removed $target")
+	else
+		warn "keep modified or unmanaged directory: $target"
+		SKIPPED+=("$target")
+	fi
+}
+
 deploy_component() {
 	local component=$1 action=link_path
 	$UNINSTALL && action=unlink_path
@@ -552,8 +601,14 @@ deploy_component() {
 			$action "$SCRIPT_DIR/niri/noctalia.kdl" "$HOME/.config/niri/noctalia.kdl"
 			;;
 		noctalia)
-			$action "$SCRIPT_DIR/noctalia/settings.toml" "$HOME/.config/noctalia/settings.toml"
-			if ! $UNINSTALL; then run mkdir -p "$HOME/Pictures/Wallpapers"; fi
+			if $UNINSTALL; then
+				unlink_path "$HOME/.config/noctalia" "$HOME/.local/state/noctalia"
+				remove_copied_directory "$SCRIPT_DIR/noctalia" "$HOME/.config/noctalia"
+			else
+				copy_directory "$SCRIPT_DIR/noctalia" "$HOME/.config/noctalia"
+				link_path "$HOME/.config/noctalia" "$HOME/.local/state/noctalia" true
+				run mkdir -p "$HOME/Pictures/Wallpapers"
+			fi
 			;;
 		pipewire)
 			$action "$SCRIPT_DIR/pipewire/bass-eq.txt" "$HOME/.config/pipewire/bass-eq.txt"
@@ -634,6 +689,32 @@ install_zsh_integrations() {
 	ensure_repo https://github.com/Aloxaf/fzf-tab.git "$HOME/.local/share/zsh/fzf-tab"
 }
 
+activate_pipewire() {
+	[[ ${SELECTED[pipewire]:-} ]] || return 0
+	if $UNINSTALL; then
+		if [[ $PLATFORM == artix ]]; then
+			local service
+			for service in pipewire pipewire-pulse wireplumber; do
+				unlink_path "/etc/dinit.d/user/$service" "$HOME/.config/dinit.d/boot.d/$service"
+			done
+		fi
+		return 0
+	fi
+	$INSTALL_PACKAGES || return 0
+
+	log "enable and start PipeWire audio services"
+	if [[ $PLATFORM == artix ]]; then
+		local service
+		for service in pipewire pipewire-pulse wireplumber; do
+			link_path "/etc/dinit.d/user/$service" "$HOME/.config/dinit.d/boot.d/$service"
+			run_optional dinitctl --user start "$service"
+		done
+	else
+		run systemctl --user enable pipewire.service pipewire-pulse.service wireplumber.service
+		run_optional systemctl --user start pipewire.service pipewire-pulse.service wireplumber.service
+	fi
+}
+
 set_default_shell() {
 	[[ ${SELECTED[zsh]:-} ]] || return 0
 	$UNINSTALL && return 0
@@ -684,6 +765,7 @@ main() {
 	for component in "${ALL_COMPONENTS[@]}"; do
 		[[ ${SELECTED[$component]:-} ]] && deploy_component "$component"
 	done
+	activate_pipewire
 
 	if $INSTALL_EXTRAS && ! $UNINSTALL; then
 		confirm "Install/update source-built tools and integrations?" && install_source_tools

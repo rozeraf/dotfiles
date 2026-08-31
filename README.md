@@ -110,13 +110,24 @@ or hooks, user data, or unrelated files.
 
 Run `./install.sh --help` for all options.
 
+## Noctalia
+
+The installer copies the repository defaults into the editable
+`~/.config/noctalia` directory. It then creates
+`~/.local/state/noctalia → ~/.config/noctalia`, so Noctalia's state-backed
+settings can be managed from the conventional config directory without tying
+the live files to the dotfiles checkout.
+
 ## PipeWire
 
-The `pipewire` component installs PipeWire, its PulseAudio, ALSA and JACK
-compatibility layers, and WirePlumber. Its active WirePlumber drop-in applies a
-parametric bass EQ to the MCHOSE V9 Pro USB output using
-`pipewire/bass-eq.txt`. The older standalone PipeWire EQ module is retained as
-`bass-eq.conf.disabled` for reference and is not loaded.
+The `pipewire` component installs PipeWire, its PulseAudio and ALSA
+compatibility layers, and WirePlumber. The conflict-prone JACK replacement is
+left optional. Its active WirePlumber drop-in applies an embedded parametric
+bass EQ and preamp to the MCHOSE V9 Pro USB output; `pipewire/bass-eq.txt`
+documents the preset without introducing a home-directory-dependent path. The
+older standalone PipeWire EQ module is retained as `bass-eq.conf.disabled` for
+reference and is not loaded. The installer enables the user services through
+Dinit on Artix or systemd on Arch and starts them after deploying the configs.
 
 ## Fastfetch
 
