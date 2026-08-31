@@ -100,9 +100,11 @@ symlink and move the corresponding backup back into place.
 
 ### Uninstalling links
 
-Uninstall mode removes only symlinks that still point into this checkout. It
-does not remove packages, source repositories, Pacman repository configuration
-or hooks, user data, or unrelated files.
+Uninstall mode removes symlinks that still point to their managed sources. It
+also removes the seeded Noctalia config directory only while it still matches
+the repository defaults; a user-modified copy is preserved. It does not remove
+packages, source repositories, Pacman repository configuration or hooks, user
+data, or unrelated files.
 
 ```bash
 ./install.sh --uninstall --components all --yes

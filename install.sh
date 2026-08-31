@@ -14,7 +14,8 @@ UNINSTALL=false
 COMPONENTS_ARG=""
 REPOSITORY_MODE=ask
 USE_ADDITIONAL_REPOS=false
-BACKUP_DIR="${HOME}/.local/state/dotfiles-backups/$(date +%Y%m%d-%H%M%S)"
+PACKAGE_SETUP_READY=false
+BACKUP_DIR="${HOME}/.local/state/dotfiles-backups/$(date +%Y%m%d-%H%M%S-%N)"
 BACKUP_USED=false
 
 declare -A SELECTED=()
@@ -37,7 +38,7 @@ Options:
   --without-repositories    Keep Pacman configuration unchanged
   --dry-run                 Print actions without changing the system
   --yes, -y                 Accept defaults and confirmations
-  --uninstall               Remove only symlinks created by this repository
+  --uninstall               Remove managed links and unchanged seeded configs
   --help, -h                Show this help
 
 Components:
@@ -185,8 +186,8 @@ register_raf_key() {
 	local key_url=https://github.com/rozeraf/raf-repo/releases/download/x86_64/rozeraf-repo-key.asc
 
 	confirm "Download and locally trust the raf repository signing key?" || {
-		warn "raf key registration skipped; signed raf packages cannot be installed until the key is trusted"
-		return 0
+		warn "raf key registration declined"
+		return 1
 	}
 
 	log "register raf repository signing key"
@@ -220,6 +221,13 @@ configure_repositories() {
 	rendered=$(mktemp)
 
 	log "configure Pacman repositories for $PLATFORM"
+	if ! register_raf_key; then
+		USE_ADDITIONAL_REPOS=false
+		rm -f -- "$rendered"
+		warn "additional repositories skipped; using AUR and source-build fallbacks"
+		return 0
+	fi
+
 	if [[ $PLATFORM == artix ]]; then
 		print_command sudo pacman -Syu --needed artix-archlinux-support
 		if ! $DRY_RUN; then
@@ -228,8 +236,6 @@ configure_repositories() {
 		fi
 		run sudo install -Dm644 "$SCRIPT_DIR/pacman/hooks/00-block-systemd.hook" "/etc/pacman.d/hooks/00-block-systemd.hook"
 	fi
-	register_raf_key
-
 	if [[ $PLATFORM == artix ]]; then
 		awk -f "$SCRIPT_DIR/pacman/strip-managed-repositories.awk" /etc/pacman.conf > "$rendered"
 		printf '\n' >> "$rendered"
@@ -454,6 +460,7 @@ install_repo_packages() {
 		warn "repository package installation skipped"
 		return
 	}
+	PACKAGE_SETUP_READY=true
 	# A repository configured during a dry run is not yet visible to pacman.
 	# Existing repositories can and should still be validated.
 	if $DRY_RUN && $USE_ADDITIONAL_REPOS; then
@@ -550,11 +557,13 @@ unlink_path() {
 	fi
 }
 
-copy_directory() {
+seed_directory() {
 	local source=$1 target=$2
 	[[ -d $source ]] || die "missing repository directory: $source"
 
-	if [[ -d $target && ! -L $target ]] && diff -qr -- "$source" "$target" >/dev/null 2>&1; then
+	# This is an editable runtime copy. Never replace an existing real directory,
+	# even when the application has changed it since the initial installation.
+	if [[ -d $target && ! -L $target ]]; then
 		SKIPPED+=("$target")
 		return 0
 	fi
@@ -605,7 +614,7 @@ deploy_component() {
 				unlink_path "$HOME/.config/noctalia" "$HOME/.local/state/noctalia"
 				remove_copied_directory "$SCRIPT_DIR/noctalia" "$HOME/.config/noctalia"
 			else
-				copy_directory "$SCRIPT_DIR/noctalia" "$HOME/.config/noctalia"
+				seed_directory "$SCRIPT_DIR/noctalia" "$HOME/.config/noctalia"
 				link_path "$HOME/.config/noctalia" "$HOME/.local/state/noctalia" true
 				run mkdir -p "$HOME/Pictures/Wallpapers"
 			fi
@@ -700,7 +709,7 @@ activate_pipewire() {
 		fi
 		return 0
 	fi
-	$INSTALL_PACKAGES || return 0
+	$PACKAGE_SETUP_READY || return 0
 
 	log "enable and start PipeWire audio services"
 	if [[ $PLATFORM == artix ]]; then
@@ -718,6 +727,7 @@ activate_pipewire() {
 set_default_shell() {
 	[[ ${SELECTED[zsh]:-} ]] || return 0
 	$UNINSTALL && return 0
+	$PACKAGE_SETUP_READY || return 0
 	command -v zsh >/dev/null 2>&1 || return 0
 	[[ ${SHELL:-} == "$(command -v zsh)" ]] && return 0
 	confirm "Set Zsh as the login shell for ${USER:-$(id -un)}?" || return 0
@@ -747,18 +757,20 @@ main() {
 
 	log "platform: $PLATFORM"
 	log "components: ${!SELECTED[*]}"
-	log "additional repositories: $USE_ADDITIONAL_REPOS"
 	$DRY_RUN && warn "dry-run mode: no changes will be made"
 
 	if ! $UNINSTALL; then
 		configure_repositories
 	fi
+	log "additional repositories: $USE_ADDITIONAL_REPOS"
 
 	if $INSTALL_PACKAGES && ! $UNINSTALL; then
 		resolve_packages
 		install_repo_packages
-		install_aur_packages
-		install_zsh_integrations
+		if $PACKAGE_SETUP_READY; then
+			install_aur_packages
+			install_zsh_integrations
+		fi
 	fi
 
 	local component
@@ -767,7 +779,7 @@ main() {
 	done
 	activate_pipewire
 
-	if $INSTALL_EXTRAS && ! $UNINSTALL; then
+	if $INSTALL_PACKAGES && $PACKAGE_SETUP_READY && $INSTALL_EXTRAS && ! $UNINSTALL; then
 		confirm "Install/update source-built tools and integrations?" && install_source_tools
 	fi
 

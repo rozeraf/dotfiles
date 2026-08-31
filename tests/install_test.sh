@@ -101,6 +101,17 @@ output=$(HOME=$TEST_ROOT "$REPO_DIR/install.sh" \
 [[ $output == *"github.com/rozeraf/desktop-stack.git"* ]] || fail "desktop-stack source fallback was not planned"
 [[ $output == *"github.com/rozeraf/elx.git"* ]] || fail "elx source fallback was not planned"
 
+printf 'test: signing key decline selects fallback\n'
+output=$(printf 'n\ny\ny\ny\n' | HOME=$TEST_ROOT "$REPO_DIR/install.sh" \
+	--platform artix \
+	--components noctalia,fastfetch \
+	--with-repositories \
+	--dry-run 2>&1)
+[[ $output == *"additional repositories: false"* ]] || fail "key decline did not disable additional repositories"
+[[ $output == *"noctalia-git"* ]] || fail "key decline did not select the Noctalia fallback"
+[[ $output == *"github.com/rozeraf/wallfetch.git"* ]] || fail "key decline did not select source builds"
+[[ $output != *"artix-archlinux-support"* ]] || fail "key decline still modified Artix repository support"
+
 printf 'test: interactive repository decline\n'
 output=$(printf 'n\ny\ny\n' | HOME=$TEST_ROOT "$REPO_DIR/install.sh" \
 	--platform artix \
@@ -109,7 +120,29 @@ output=$(printf 'n\ny\ny\n' | HOME=$TEST_ROOT "$REPO_DIR/install.sh" \
 [[ $output == *"additional repositories: false"* ]] || fail "repository decline did not select fallback mode"
 [[ $output == *"github.com/rozeraf/tutors.git"* ]] || fail "repository decline did not continue to tutors source build"
 
+printf 'test: package installation decline\n'
+output=$(printf 'n\ny\n' | HOME=$TEST_ROOT "$REPO_DIR/install.sh" \
+	--platform artix \
+	--components tutors \
+	--without-repositories \
+	--dry-run 2>&1)
+[[ $output == *"repository package installation skipped"* ]] || fail "package decline was not reported"
+[[ $output != *"github.com/rozeraf/tutors.git"* ]] || fail "source build continued after package decline"
+
+printf 'test: config-only mode has no source actions\n'
+output=$(HOME=$TEST_ROOT "$REPO_DIR/install.sh" \
+	--platform artix \
+	--components nvim,tutors \
+	--no-packages \
+	--dry-run \
+	--yes)
+[[ $output != *"github.com/rozeraf/tutors.git"* ]] || fail "config-only mode cloned tutors"
+[[ $output != *"uv tool install"* ]] || fail "config-only mode installed Python tools"
+[[ $output != *"cargo install"* ]] || fail "config-only mode installed Rust tools"
+[[ $output != *"bun add"* ]] || fail "config-only mode installed JavaScript tools"
+
 printf 'test: optional zsh integrations\n'
+# shellcheck disable=SC2016
 grep -Fq '[[ -r "$HOME/.local/share/zsh/fzf-tab/fzf-tab.plugin.zsh" ]]' "$REPO_DIR/zsh/.zshrc" || \
 	fail "fzf-tab is sourced without an existence check"
 grep -Fq 'if (( $+commands[starship] )); then' "$REPO_DIR/zsh/.zshrc" || \
@@ -126,6 +159,15 @@ output=$(HOME=$TEST_ROOT "$REPO_DIR/install.sh" \
 [[ $output == *" starship"* ]] || fail "Zsh component did not include the Starship package"
 [[ $output == *"$REPO_DIR/starship/starship.toml"* ]] || fail "Zsh component did not deploy the Starship config"
 [[ $output == *"github.com/Aloxaf/fzf-tab.git"* ]] || fail "Zsh component did not clone fzf-tab"
+
+printf 'test: config-only Zsh does not change login shell\n'
+output=$(SHELL=/bin/sh HOME=$TEST_ROOT "$REPO_DIR/install.sh" \
+	--platform artix \
+	--components zsh \
+	--no-packages \
+	--dry-run \
+	--yes)
+[[ $output != *"chsh "* ]] || fail "config-only mode attempted to change the login shell"
 
 printf 'test: PipeWire component plan\n'
 output=$(HOME=$TEST_ROOT "$REPO_DIR/install.sh" \
@@ -188,5 +230,30 @@ HOME=$noctalia_home "$REPO_DIR/install.sh" \
 [[ ! -e $noctalia_home/.local/state/noctalia && ! -L $noctalia_home/.local/state/noctalia ]] || \
 	fail "Noctalia state link survived uninstall"
 [[ ! -e $noctalia_home/.config/noctalia ]] || fail "unchanged Noctalia config copy survived uninstall"
+
+printf 'test: modified Noctalia config preservation\n'
+HOME=$noctalia_home "$REPO_DIR/install.sh" \
+	--platform artix \
+	--components noctalia \
+	--no-packages \
+	--no-extras \
+	--yes >/dev/null
+printf '\n# local change\n' >> "$noctalia_home/.config/noctalia/settings.toml"
+HOME=$noctalia_home "$REPO_DIR/install.sh" \
+	--platform artix \
+	--components noctalia \
+	--no-packages \
+	--no-extras \
+	--yes >/dev/null
+grep -Fq '# local change' "$noctalia_home/.config/noctalia/settings.toml" || \
+	fail "repeated setup replaced modified Noctalia config"
+HOME=$noctalia_home "$REPO_DIR/install.sh" \
+	--platform artix \
+	--components noctalia \
+	--uninstall \
+	--yes >/dev/null
+[[ -d $noctalia_home/.config/noctalia ]] || fail "uninstall removed modified Noctalia config"
+[[ ! -e $noctalia_home/.local/state/noctalia && ! -L $noctalia_home/.local/state/noctalia ]] || \
+	fail "Noctalia state link survived modified-config uninstall"
 
 printf 'PASS\n'
