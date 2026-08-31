@@ -176,7 +176,7 @@ output=$(HOME=$TEST_ROOT "$REPO_DIR/install.sh" \
 	--without-repositories \
 	--dry-run \
 	--yes)
-for package in pipewire wireplumber pipewire-pulse pipewire-alsa; do
+for package in pipewire wireplumber pipewire-pulse pipewire-alsa pipewire-dinit pipewire-pulse-dinit wireplumber-dinit; do
 	[[ $output == *" $package"* ]] || fail "$package was not included in the PipeWire package plan"
 done
 [[ $output != *" pipewire-jack"* ]] || fail "conflict-prone JACK replacement was included by default"

@@ -130,6 +130,8 @@ documents the preset without introducing a home-directory-dependent path. The
 older standalone PipeWire EQ module is retained as `bass-eq.conf.disabled` for
 reference and is not loaded. The installer enables the user services through
 Dinit on Artix or systemd on Arch and starts them after deploying the configs.
+On Artix it installs the dedicated `pipewire-dinit`, `pipewire-pulse-dinit`,
+and `wireplumber-dinit` service packages first.
 
 ## Fastfetch
 

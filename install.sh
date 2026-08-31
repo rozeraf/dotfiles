@@ -387,6 +387,11 @@ resolve_packages() {
 		for package in pipewire wireplumber pipewire-pulse pipewire-alsa; do
 			add_unique REPO_PACKAGES "$package"
 		done
+		if [[ $PLATFORM == artix ]]; then
+			for package in pipewire-dinit pipewire-pulse-dinit wireplumber-dinit; do
+				add_unique REPO_PACKAGES "$package"
+			done
+		fi
 	fi
 
 	if [[ ${SELECTED[ghostty]:-} ]]; then
@@ -698,13 +703,29 @@ install_zsh_integrations() {
 	ensure_repo https://github.com/Aloxaf/fzf-tab.git "$HOME/.local/share/zsh/fzf-tab"
 }
 
+find_dinit_user_service() {
+	local service=$1 candidate
+	for candidate in "/etc/dinit.d/user/$service" "/usr/lib/dinit.d/user/$service"; do
+		if [[ -e $candidate || -L $candidate ]]; then
+			printf '%s\n' "$candidate"
+			return 0
+		fi
+	done
+	return 1
+}
+
 activate_pipewire() {
 	[[ ${SELECTED[pipewire]:-} ]] || return 0
 	if $UNINSTALL; then
 		if [[ $PLATFORM == artix ]]; then
-			local service
+			local service service_path
 			for service in pipewire pipewire-pulse wireplumber; do
-				unlink_path "/etc/dinit.d/user/$service" "$HOME/.config/dinit.d/boot.d/$service"
+				service_path=$(find_dinit_user_service "$service" || true)
+				if [[ -n $service_path ]]; then
+					unlink_path "$service_path" "$HOME/.config/dinit.d/boot.d/$service"
+				else
+					warn "cannot verify Dinit service link without its package: $service"
+				fi
 			done
 		fi
 		return 0
@@ -713,9 +734,14 @@ activate_pipewire() {
 
 	log "enable and start PipeWire audio services"
 	if [[ $PLATFORM == artix ]]; then
-		local service
+		local service service_path
 		for service in pipewire pipewire-pulse wireplumber; do
-			link_path "/etc/dinit.d/user/$service" "$HOME/.config/dinit.d/boot.d/$service"
+			service_path=$(find_dinit_user_service "$service" || true)
+			if [[ -z $service_path ]]; then
+				warn "Dinit user service is missing after package installation: $service"
+				continue
+			fi
+			link_path "$service_path" "$HOME/.config/dinit.d/boot.d/$service"
 			run_optional dinitctl --user start "$service"
 		done
 	else
