@@ -105,4 +105,10 @@ output=$(printf 'n\ny\ny\n' | HOME=$TEST_ROOT "$REPO_DIR/install.sh" \
 [[ $output == *"additional repositories: false"* ]] || fail "repository decline did not select fallback mode"
 [[ $output == *"github.com/rozeraf/tutors.git"* ]] || fail "repository decline did not continue to tutors source build"
 
+printf 'test: optional zsh integrations\n'
+grep -Fq '[[ -r "$HOME/.local/share/zsh/fzf-tab/fzf-tab.plugin.zsh" ]]' "$REPO_DIR/zsh/.zshrc" || \
+	fail "fzf-tab is sourced without an existence check"
+grep -Fq 'if (( $+commands[starship] )); then' "$REPO_DIR/zsh/.zshrc" || \
+	fail "Starship is initialized without a command check"
+
 printf 'PASS\n'

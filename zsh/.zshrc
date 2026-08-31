@@ -80,7 +80,8 @@ source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 source /usr/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh
 
 # fzf-tab
-source "$HOME/.local/share/zsh/fzf-tab/fzf-tab.plugin.zsh"
+[[ -r "$HOME/.local/share/zsh/fzf-tab/fzf-tab.plugin.zsh" ]] && \
+    source "$HOME/.local/share/zsh/fzf-tab/fzf-tab.plugin.zsh"
 
 
 # Autosuggestions
@@ -152,7 +153,9 @@ eval "$(zoxide init zsh)"
 
 # Prompt
 
-eval "$(starship init zsh)"
+if (( $+commands[starship] )); then
+    eval "$(starship init zsh)"
+fi
 
 
 # ------------------------------------------------------------
