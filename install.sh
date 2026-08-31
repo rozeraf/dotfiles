@@ -661,11 +661,14 @@ deploy_component() {
 ensure_repo() {
 	local url=$1 directory=$2
 	if [[ -d $directory/.git ]]; then
-		run git -C "$directory" pull --ff-only
+		run env GIT_TERMINAL_PROMPT=0 git -c credential.helper= -C "$directory" pull --ff-only
+	elif [[ -d $directory ]] && [[ -z $(find "$directory" -mindepth 1 -maxdepth 1 -print -quit) ]]; then
+		run rmdir -- "$directory"
+		run env GIT_TERMINAL_PROMPT=0 git -c credential.helper= clone "$url" "$directory"
 	elif [[ -e $directory ]]; then
 		die "$directory exists but is not a Git repository"
 	else
-		run git clone "$url" "$directory"
+		run env GIT_TERMINAL_PROMPT=0 git -c credential.helper= clone "$url" "$directory"
 	fi
 }
 

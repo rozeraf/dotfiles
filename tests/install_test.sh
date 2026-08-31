@@ -159,6 +159,8 @@ output=$(HOME=$TEST_ROOT "$REPO_DIR/install.sh" \
 [[ $output == *" starship"* ]] || fail "Zsh component did not include the Starship package"
 [[ $output == *"$REPO_DIR/starship/starship.toml"* ]] || fail "Zsh component did not deploy the Starship config"
 [[ $output == *"github.com/Aloxaf/fzf-tab.git"* ]] || fail "Zsh component did not clone fzf-tab"
+[[ $output == *"GIT_TERMINAL_PROMPT=0"* && $output == *"credential.helper="* ]] || \
+	fail "public clone could still invoke a broken GitHub credential helper"
 
 printf 'test: config-only Zsh does not change login shell\n'
 output=$(SHELL=/bin/sh HOME=$TEST_ROOT "$REPO_DIR/install.sh" \
