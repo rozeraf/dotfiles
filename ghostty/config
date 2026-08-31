@@ -82,8 +82,6 @@ gtk-toolbar-style = flat
 
 gtk-custom-css = ~/.config/ghostty/gtk.css
 
-custom-shader = shaders/cursor_tail.glsl
-custom-shader-animation = true
 keybind = ctrl+shift+c=copy_to_clipboard:plain
 confirm-close-surface = false
 theme = noctalia

@@ -16,17 +16,80 @@ Personal configuration for an Artix/Arch Linux desktop built around Niri and Noc
 
 ```text
 dotfiles/
+├── install.sh    Interactive Arch/Artix bootstrap and linker
 ├── fastfetch/    Fastfetch config and dynamic logo template
 ├── ghostty/      Ghostty terminal config, GTK styling, and generated theme
 ├── niri/         Niri compositor and Noctalia integration
 ├── noctalia/     Noctalia user settings
 ├── nvim/         Neovim config managed with lazy.nvim
 ├── starship/     Starship prompt
+├── tests/        Isolated installer tests
 ├── zsh/          Zsh startup, aliases, and functions
 └── elx/          elx file-listing config
 ```
 
-These are personal files, not a universal installer. Review paths and settings before linking them into `~/.config`.
+These remain opinionated personal settings. Review display, wallpaper, and
+application-specific values before deploying them to a different machine.
+
+## Installation
+
+The interactive installer supports both Arch Linux and Artix Linux. It asks
+which platform and components to install, shows package commands before
+running them, backs up conflicting files, and creates relative symbolic links.
+
+```bash
+git clone https://github.com/rozeraf/dotfiles.git ~/projects/dotfiles
+cd ~/projects/dotfiles
+./install.sh
+```
+
+Arch and Artix use separate package plans. In particular, Arch installs
+Noctalia from `[extra]`, while Artix builds `noctalia-git` from the AUR with
+`paru`. If `paru` is missing, the installer bootstraps it from its AUR
+PKGBUILD after installing `base-devel` and Git.
+
+The full setup includes Niri, Noctalia, Ghostty, Neovim, Zsh, Starship,
+Fastfetch, fonts and Wayland utilities. It can also clone, build, and install
+`elx`, `wallfetch`, `desktop-stack`, `fzf-tab`, and the three programs from
+[`rozeraf/tutors`](https://github.com/rozeraf/tutors). User-built binaries are
+installed into `~/.local/bin`.
+
+Useful modes:
+
+```bash
+./install.sh --dry-run
+./install.sh --platform artix --yes
+./install.sh --components nvim,zsh,starship --no-packages
+./install.sh --components fastfetch,elx,tutors
+```
+
+### Updating
+
+Pull this repository and run the installer again. Correct links are left
+untouched; source-built projects are updated with a fast-forward-only pull.
+
+```bash
+git pull --ff-only
+./install.sh
+```
+
+### Backups and recovery
+
+The installer never silently overwrites an existing path. Conflicts are moved
+to a timestamped directory under `~/.local/state/dotfiles-backups/`, and that
+directory is printed in the final summary. To recover a file, remove its new
+symlink and move the corresponding backup back into place.
+
+### Uninstalling links
+
+Uninstall mode removes only symlinks that still point into this checkout. It
+does not remove packages, source repositories, user data, or unrelated files.
+
+```bash
+./install.sh --uninstall --components all --yes
+```
+
+Run `./install.sh --help` for all options.
 
 ## Fastfetch
 
@@ -40,7 +103,7 @@ Install both before using `fastfetch/config.jsonc`:
 ```bash
 git clone https://github.com/rozeraf/desktop-stack.git ~/projects/desktop-stack
 cargo build --release --manifest-path ~/projects/desktop-stack/Cargo.toml
-sudo install -Dm755 ~/projects/desktop-stack/target/release/desktop-stack /usr/local/bin/desktop-stack
+install -Dm755 ~/projects/desktop-stack/target/release/desktop-stack ~/.local/bin/desktop-stack
 
 git clone https://github.com/rozeraf/wallfetch.git ~/projects/wallfetch
 make -C ~/projects/wallfetch PREFIX="$HOME/.local" install
