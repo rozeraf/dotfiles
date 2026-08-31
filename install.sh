@@ -170,6 +170,7 @@ choose_repositories() {
 			fi
 			;;
 	esac
+	return 0
 }
 
 configure_repositories() {

@@ -97,4 +97,12 @@ output=$(HOME=$TEST_ROOT "$REPO_DIR/install.sh" \
 [[ $output == *"github.com/rozeraf/desktop-stack.git"* ]] || fail "desktop-stack source fallback was not planned"
 [[ $output == *"github.com/rozeraf/elx.git"* ]] || fail "elx source fallback was not planned"
 
+printf 'test: interactive repository decline\n'
+output=$(printf 'n\ny\ny\n' | HOME=$TEST_ROOT "$REPO_DIR/install.sh" \
+	--platform artix \
+	--components tutors \
+	--dry-run)
+[[ $output == *"additional repositories: false"* ]] || fail "repository decline did not select fallback mode"
+[[ $output == *"github.com/rozeraf/tutors.git"* ]] || fail "repository decline did not continue to tutors source build"
+
 printf 'PASS\n'
