@@ -432,7 +432,8 @@ deploy_component() {
 			;;
 		fastfetch)
 			$action "$SCRIPT_DIR/fastfetch/config.jsonc" "$HOME/.config/fastfetch/config.jsonc"
-			$action "$SCRIPT_DIR/fastfetch/logo" "$HOME/.config/fastfetch/logo"
+			$action "$SCRIPT_DIR/wallfetch/config.toml" "$HOME/.config/wallfetch/config.toml"
+			$action "$SCRIPT_DIR/wallfetch/template" "$HOME/.config/wallfetch/template"
 			;;
 		elx)
 			$action "$SCRIPT_DIR/elx/config.toml" "$HOME/.config/elx/config.toml"

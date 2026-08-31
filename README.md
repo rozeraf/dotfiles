@@ -17,12 +17,13 @@ Personal configuration for an Artix/Arch Linux desktop built around Niri and Noc
 ```text
 dotfiles/
 ├── install.sh    Interactive Arch/Artix bootstrap and linker
-├── fastfetch/    Fastfetch config and dynamic logo template
+├── fastfetch/    Fastfetch config
 ├── ghostty/      Ghostty terminal config, GTK styling, and generated theme
 ├── niri/         Niri compositor and Noctalia integration
 ├── noctalia/     Noctalia user settings
 ├── nvim/         Neovim config managed with lazy.nvim
 ├── starship/     Starship prompt
+├── wallfetch/    Independent palette provider config and template
 ├── tests/        Isolated installer tests
 ├── zsh/          Zsh startup, aliases, and functions
 └── elx/          elx file-listing config
@@ -96,7 +97,7 @@ Run `./install.sh --help` for all options.
 The Fastfetch config depends on two small external utilities:
 
 - [`desktop-stack`](https://github.com/rozeraf/desktop-stack) detects the active compositor, desktop shell, bar, and related services.
-- [`wallfetch`](https://github.com/rozeraf/wallfetch) extracts an ordered palette from the current Noctalia wallpaper and renders the five-color ANSI logo.
+- [`wallfetch`](https://github.com/rozeraf/wallfetch) independently extracts an ordered wallpaper palette; Fastfetch consumes its formatted template output.
 
 Install both before using `fastfetch/config.jsonc`:
 
@@ -109,12 +110,14 @@ git clone https://github.com/rozeraf/wallfetch.git ~/projects/wallfetch
 make -C ~/projects/wallfetch PREFIX="$HOME/.local" install
 ```
 
-Then link or copy the config and logo template:
+Then link or copy the consumer config and the independent wallfetch config:
 
 ```bash
 mkdir -p ~/.config/fastfetch
 ln -sfn "$PWD/fastfetch/config.jsonc" ~/.config/fastfetch/config.jsonc
-ln -sfn "$PWD/fastfetch/logo" ~/.config/fastfetch/logo
+mkdir -p ~/.config/wallfetch
+ln -sfn "$PWD/wallfetch/config.toml" ~/.config/wallfetch/config.toml
+ln -sfn "$PWD/wallfetch/template" ~/.config/wallfetch/template
 ```
 
 The config intentionally remains strict JSON despite the `.jsonc` extension. Noctalia's Fastfetch community template merges generated UI colors with `jq`, so comments and trailing commas would break theme updates. Dependency links therefore live here rather than as comments in the config.
@@ -122,12 +125,12 @@ The config intentionally remains strict JSON despite the `.jsonc` extension. Noc
 Fastfetch calls both tools through command modules:
 
 ```text
-fastfetch
-├── wallfetch → wallpaper hash → cached ANSI logo in /tmp
-└── desktop-stack → cached desktop/session description
+wallpaper → wallfetch colors → reusable palette
+                              └── template → wallfetch render → Fastfetch
+desktop session → desktop-stack → Fastfetch
 ```
 
-Noctalia may continue updating title, key, and percentage colors. Logo colors bypass that generated palette and come directly from the wallpaper through `wallfetch`.
+Noctalia may continue updating title, key, and percentage colors. The rendered template bypasses that generated palette and comes from the independent `wallfetch` pipeline. Both commands are resolved through `PATH`, so packages installed in `/usr/bin` and local builds installed in `~/.local/bin` work without config changes.
 
 ## Shell
 

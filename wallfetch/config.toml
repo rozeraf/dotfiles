@@ -1,0 +1,11 @@
+[wallpaper]
+source = "noctalia"
+
+[palette]
+source_count = 8
+color_count = 5
+reduction = "resample"
+background_threshold = 0.055
+
+[template]
+path = "~/.config/wallfetch/template"
