@@ -92,17 +92,22 @@ zi       interactive zoxide query
 
 ## Neovim
 
-Neovim plugins are managed by [lazy.nvim](https://github.com/folke/lazy.nvim) and bootstrap on first launch. The configuration includes Telescope, Treesitter, LSP/Mason, completion, formatting, Oil, ToggleTerm, Noice, Which-key, Git integrations, and Catppuccin.
+Neovim is configured as a lightweight editor for quick changes rather than a
+second IDE. Plugins are managed by
+[lazy.nvim](https://github.com/folke/lazy.nvim) and split into small modules.
+The setup keeps Oil, simple buffer/path completion, formatting, sessions,
+ToggleTerm, Alpha, Which-key, Noice, Catppuccin, and a compact set of editing
+helpers. It intentionally has no LSP, Mason, Treesitter plugin, project search,
+Git integration, or file-tree sidebar.
 
 Main mappings use `Space` as leader:
 
 ```text
 -             open Oil
-<leader>ff    find files
-<leader>fg    live grep
-<leader>fb    buffers
-<leader>fr    recent files
-<leader>sr    project search and replace
+<leader>a     open Alpha dashboard
+<leader>bd    close buffer
+<leader>1..9  switch buffer
+<leader>tf    floating terminal
 d/y/x/p       use the system clipboard
 ```
 

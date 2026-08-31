@@ -25,13 +25,15 @@ targets Neovim 0.12 or newer.
 
 ## Architecture Notes
 
-### Neovim (`nvim/init.lua`)
+### Neovim (`nvim/`)
 
-Single-file config. Structure:
-1. Lazy.nvim bootstrap
-2. Global options (`vim.opt.*`)
-3. Global keymaps (leader = Space)
-4. `require("lazy").setup({...})` — all plugins defined inline
+`init.lua` is a small entry point. Core options, keymaps, highlights, and the
+VS Code compatibility spec live in `lua/config/`; each plugin group lives in a
+separate `lua/plugins/` module loaded through Lazy's `import` mechanism.
+
+The setup is deliberately a lightweight editor, not an IDE. Do not add LSP,
+Mason, Treesitter plugins, project-wide search, Git frontends, or file-tree
+sidebars unless explicitly requested.
 
 Key behavior: normal `d`, `y`, `x`, and `p` operations use the system clipboard.
 Other operators, including `c` and `s`, retain normal Vim register behavior.
