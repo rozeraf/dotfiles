@@ -1,0 +1,15 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = systemd
+Target = systemd-libs
+Target = systemd-sysvcompat
+Target = systemd-resolvconf
+Target = lib32-systemd
+
+[Action]
+Description = Refusing to install Arch systemd packages on Artix
+When = PreTransaction
+Exec = /usr/bin/false
+AbortOnFail

@@ -12,6 +12,8 @@ INSTALL_PACKAGES=true
 INSTALL_EXTRAS=true
 UNINSTALL=false
 COMPONENTS_ARG=""
+REPOSITORY_MODE=ask
+USE_ADDITIONAL_REPOS=false
 BACKUP_DIR="${HOME}/.local/state/dotfiles-backups/$(date +%Y%m%d-%H%M%S)"
 BACKUP_USED=false
 
@@ -31,6 +33,8 @@ Options:
   --components LIST         Comma-separated components or "all"
   --no-packages             Only deploy configuration files
   --no-extras               Skip source builds and third-party tools
+  --with-repositories       Configure raf and protected Arch repositories
+  --without-repositories    Keep Pacman configuration unchanged
   --dry-run                 Print actions without changing the system
   --yes, -y                 Accept defaults and confirmations
   --uninstall               Remove only symlinks created by this repository
@@ -113,6 +117,14 @@ parse_args() {
 				INSTALL_EXTRAS=false
 				shift
 				;;
+			--with-repositories)
+				REPOSITORY_MODE=yes
+				shift
+				;;
+			--without-repositories)
+				REPOSITORY_MODE=no
+				shift
+				;;
 			--dry-run)
 				DRY_RUN=true
 				shift
@@ -134,6 +146,73 @@ parse_args() {
 			*) die "unknown option: $1" ;;
 		esac
 	done
+}
+
+choose_repositories() {
+	$UNINSTALL && return 0
+
+	case $REPOSITORY_MODE in
+		yes) USE_ADDITIONAL_REPOS=true ;;
+		no) USE_ADDITIONAL_REPOS=false ;;
+		ask)
+			if ! $INSTALL_PACKAGES; then
+				USE_ADDITIONAL_REPOS=false
+			elif $ASSUME_YES; then
+				USE_ADDITIONAL_REPOS=true
+			else
+				local answer
+				if [[ $PLATFORM == artix ]]; then
+					read -r -p "Configure raf and protected Arch [extra] repositories? [Y/n] " answer
+				else
+					read -r -p "Configure the raf package repository? [Y/n] " answer
+				fi
+				[[ $answer != [nN] && $answer != [nN][oO] ]] && USE_ADDITIONAL_REPOS=true
+			fi
+			;;
+	esac
+}
+
+configure_repositories() {
+	$USE_ADDITIONAL_REPOS || return 0
+	local repository_file="$SCRIPT_DIR/pacman/repositories-$PLATFORM.conf"
+	local rendered
+	rendered=$(mktemp)
+
+	log "configure Pacman repositories for $PLATFORM"
+	if [[ $PLATFORM == artix ]]; then
+		print_command sudo pacman -Syu --needed artix-archlinux-support
+		if ! $DRY_RUN; then
+			pacman -Si artix-archlinux-support >/dev/null 2>&1 || die "Artix repository does not provide artix-archlinux-support"
+			sudo pacman -Syu --needed --noconfirm artix-archlinux-support
+		fi
+		run sudo install -Dm644 "$SCRIPT_DIR/pacman/hooks/00-block-systemd.hook" "/etc/pacman.d/hooks/00-block-systemd.hook"
+	fi
+
+	if [[ $PLATFORM == artix ]]; then
+		awk -f "$SCRIPT_DIR/pacman/strip-managed-repositories.awk" /etc/pacman.conf > "$rendered"
+		printf '\n' >> "$rendered"
+		awk '1' "$repository_file" >> "$rendered"
+	else
+		awk -v repository_file="$repository_file" \
+			-f "$SCRIPT_DIR/pacman/insert-raf-before-extra.awk" \
+			/etc/pacman.conf > "$rendered"
+	fi
+
+	if cmp -s "$rendered" /etc/pacman.conf; then
+		SKIPPED+=("/etc/pacman.conf")
+	else
+		log "back up /etc/pacman.conf -> $BACKUP_DIR/etc/pacman.conf"
+		if ! $DRY_RUN; then
+			mkdir -p -- "$BACKUP_DIR/etc"
+			cp -- /etc/pacman.conf "$BACKUP_DIR/etc/pacman.conf"
+		fi
+		BACKUP_USED=true
+		BACKED_UP+=("/etc/pacman.conf")
+		run sudo install -Dm644 "$rendered" /etc/pacman.conf
+		INSTALLED+=("/etc/pacman.conf")
+	fi
+	rm -f -- "$rendered"
+	run sudo pacman -Syy
 }
 
 detect_platform() {
@@ -241,7 +320,7 @@ resolve_packages() {
 		for package in brightnessctl playerctl cliphist imagemagick jq pipewire wireplumber polkit grim slurp tesseract tesseract-data-eng; do
 			add_unique REPO_PACKAGES "$package"
 		done
-		if [[ $PLATFORM == arch ]]; then
+		if [[ $PLATFORM == arch || $USE_ADDITIONAL_REPOS == true ]]; then
 			add_unique REPO_PACKAGES noctalia
 		else
 			add_unique AUR_PACKAGES noctalia-git
@@ -276,11 +355,20 @@ resolve_packages() {
 
 	if [[ ${SELECTED[fastfetch]:-} ]]; then
 		for package in fastfetch jq; do add_unique REPO_PACKAGES "$package"; done
-		command -v cargo >/dev/null 2>&1 || add_unique REPO_PACKAGES rust
+		if $USE_ADDITIONAL_REPOS; then
+			add_unique REPO_PACKAGES wallfetch
+			add_unique REPO_PACKAGES desktop-stack
+		else
+			command -v cargo >/dev/null 2>&1 || add_unique REPO_PACKAGES rust
+		fi
 	fi
 
-	if [[ ${SELECTED[elx]:-} ]] && ! command -v cargo >/dev/null 2>&1; then
-		add_unique REPO_PACKAGES rust
+	if [[ ${SELECTED[elx]:-} ]]; then
+		if $USE_ADDITIONAL_REPOS; then
+			add_unique REPO_PACKAGES elx
+		elif ! command -v cargo >/dev/null 2>&1; then
+			add_unique REPO_PACKAGES rust
+		fi
 	fi
 
 	if [[ ${SELECTED[tutors]:-} ]]; then
@@ -310,6 +398,11 @@ install_repo_packages() {
 		warn "repository package installation skipped"
 		return
 	}
+	# A repository configured during a dry run is not yet visible to pacman.
+	# Existing repositories can and should still be validated.
+	if $DRY_RUN && $USE_ADDITIONAL_REPOS; then
+		return 0
+	fi
 	verify_repo_packages
 	run sudo pacman -Syu --needed --noconfirm "${REPO_PACKAGES[@]}"
 }
@@ -460,7 +553,7 @@ install_source_tools() {
 		ensure_repo https://github.com/Aloxaf/fzf-tab.git "$HOME/.local/share/zsh/fzf-tab"
 	fi
 
-	if [[ ${SELECTED[fastfetch]:-} ]]; then
+	if [[ ${SELECTED[fastfetch]:-} ]] && ! $USE_ADDITIONAL_REPOS; then
 		ensure_repo https://github.com/rozeraf/wallfetch.git "$projects_dir/wallfetch"
 		run make -C "$projects_dir/wallfetch" PREFIX="$HOME/.local" install
 
@@ -469,7 +562,7 @@ install_source_tools() {
 		run install -Dm755 "$projects_dir/desktop-stack/target/release/desktop-stack" "$HOME/.local/bin/desktop-stack"
 	fi
 
-	if [[ ${SELECTED[elx]:-} ]]; then
+	if [[ ${SELECTED[elx]:-} ]] && ! $USE_ADDITIONAL_REPOS; then
 		ensure_repo https://github.com/rozeraf/elx.git "$projects_dir/elx"
 		run make -C "$projects_dir/elx" install
 	fi
@@ -514,10 +607,16 @@ main() {
 	[[ $EUID -ne 0 ]] || die "run this installer as a regular user, not root"
 	choose_platform
 	select_components
+	choose_repositories
 
 	log "platform: $PLATFORM"
 	log "components: ${!SELECTED[*]}"
+	log "additional repositories: $USE_ADDITIONAL_REPOS"
 	$DRY_RUN && warn "dry-run mode: no changes will be made"
+
+	if ! $UNINSTALL; then
+		configure_repositories
+	fi
 
 	if $INSTALL_PACKAGES && ! $UNINSTALL; then
 		resolve_packages

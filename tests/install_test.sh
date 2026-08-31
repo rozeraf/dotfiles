@@ -65,9 +65,36 @@ if PATH="$fake_bin:$PATH" HOME=$TEST_ROOT "$REPO_DIR/install.sh" \
 	--platform artix \
 	--components starship \
 	--dry-run \
+	--without-repositories \
 	--no-extras \
 	--yes >/dev/null 2>&1; then
 	fail "missing repository dependency was not detected"
 fi
+
+printf 'test: additional repository package plan\n'
+output=$(HOME=$TEST_ROOT "$REPO_DIR/install.sh" \
+	--platform artix \
+	--components noctalia,fastfetch,elx \
+	--with-repositories \
+	--dry-run \
+	--yes)
+[[ $output == *"artix-archlinux-support"* ]] || fail "Artix compatibility support was not planned"
+[[ $output == *"00-block-systemd.hook"* ]] || fail "systemd protection hook was not planned"
+for package in noctalia wallfetch desktop-stack elx; do
+	[[ $output == *" $package"* ]] || fail "$package repository package was not planned"
+done
+[[ $output != *"noctalia-git"* ]] || fail "repository mode retained the Noctalia AUR fallback"
+
+printf 'test: fallback package plan\n'
+output=$(HOME=$TEST_ROOT "$REPO_DIR/install.sh" \
+	--platform artix \
+	--components noctalia,fastfetch,elx \
+	--without-repositories \
+	--dry-run \
+	--yes)
+[[ $output == *"noctalia-git"* ]] || fail "Noctalia AUR fallback was not planned"
+[[ $output == *"github.com/rozeraf/wallfetch.git"* ]] || fail "wallfetch source fallback was not planned"
+[[ $output == *"github.com/rozeraf/desktop-stack.git"* ]] || fail "desktop-stack source fallback was not planned"
+[[ $output == *"github.com/rozeraf/elx.git"* ]] || fail "elx source fallback was not planned"
 
 printf 'PASS\n'

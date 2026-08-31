@@ -22,6 +22,7 @@ dotfiles/
 ├── niri/         Niri compositor and Noctalia integration
 ├── noctalia/     Noctalia user settings
 ├── nvim/         Neovim config managed with lazy.nvim
+├── pacman/       Managed repository blocks and Artix protection hook
 ├── starship/     Starship prompt
 ├── wallfetch/    Independent palette provider config and template
 ├── tests/        Isolated installer tests
@@ -35,8 +36,9 @@ application-specific values before deploying them to a different machine.
 ## Installation
 
 The interactive installer supports both Arch Linux and Artix Linux. It asks
-which platform and components to install, shows package commands before
-running them, backs up conflicting files, and creates relative symbolic links.
+which platform and components to install and whether Pacman should use the
+additional repositories. It shows package commands before running them, backs
+up conflicting files, and creates relative symbolic links.
 
 ```bash
 git clone https://github.com/rozeraf/dotfiles.git ~/projects/dotfiles
@@ -44,22 +46,33 @@ cd ~/projects/dotfiles
 ./install.sh
 ```
 
-Arch and Artix use separate package plans. In particular, Arch installs
-Noctalia from `[extra]`, while Artix builds `noctalia-git` from the AUR with
-`paru`. If `paru` is missing, the installer bootstraps it from its AUR
-PKGBUILD after installing `base-devel` and Git.
+The recommended repository mode adds `[raf]` before `[extra]`. On Artix it also
+installs `artix-archlinux-support`, enables Arch's mirror list, and installs a
+pre-transaction hook that refuses Arch `systemd` packages. Noctalia is then
+installed from `[extra]`; `elx`, `wallfetch`, and `desktop-stack` come from
+`[raf]`. Existing unrelated Pacman settings and repository blocks are kept,
+and the old `/etc/pacman.conf` is backed up before replacement.
+
+If repository setup is declined, `/etc/pacman.conf` is left untouched. The
+installer retains the fallback plan: on Artix it installs `noctalia-git` with
+`paru` and builds the personal Rust tools from their source repositories. If
+`paru` is missing, it is bootstrapped from its AUR PKGBUILD after installing
+`base-devel` and Git.
 
 The full setup includes Niri, Noctalia, Ghostty, Neovim, Zsh, Starship,
 Fastfetch, fonts and Wayland utilities. It can also clone, build, and install
-`elx`, `wallfetch`, `desktop-stack`, `fzf-tab`, and the three programs from
+`fzf-tab` and the three programs from
 [`rozeraf/tutors`](https://github.com/rozeraf/tutors). User-built binaries are
-installed into `~/.local/bin`.
+installed into `~/.local/bin`. The three personal tools are built this way only
+in fallback mode; repository mode installs their packages into `/usr/bin`.
 
 Useful modes:
 
 ```bash
 ./install.sh --dry-run
 ./install.sh --platform artix --yes
+./install.sh --platform artix --with-repositories --dry-run
+./install.sh --platform artix --without-repositories
 ./install.sh --components nvim,zsh,starship --no-packages
 ./install.sh --components fastfetch,elx,tutors
 ```
@@ -84,7 +97,8 @@ symlink and move the corresponding backup back into place.
 ### Uninstalling links
 
 Uninstall mode removes only symlinks that still point into this checkout. It
-does not remove packages, source repositories, user data, or unrelated files.
+does not remove packages, source repositories, Pacman repository configuration
+or hooks, user data, or unrelated files.
 
 ```bash
 ./install.sh --uninstall --components all --yes
