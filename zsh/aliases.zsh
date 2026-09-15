@@ -22,3 +22,5 @@ alias i='sudo pacman -S'
 
 # Zoxide
 alias zi='zoxide query -i'
+
+alias zen-alpha='zen-browser -P alpha --no-remote'

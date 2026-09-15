@@ -80,8 +80,7 @@ source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 source /usr/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh
 
 # fzf-tab
-[[ -r "$HOME/.local/share/zsh/fzf-tab/fzf-tab.plugin.zsh" ]] && \
-    source "$HOME/.local/share/zsh/fzf-tab/fzf-tab.plugin.zsh"
+source "$HOME/.local/share/zsh/fzf-tab/fzf-tab.plugin.zsh"
 
 
 # Autosuggestions
@@ -153,9 +152,7 @@ eval "$(zoxide init zsh)"
 
 # Prompt
 
-if (( $+commands[starship] )); then
-    eval "$(starship init zsh)"
-fi
+eval "$(starship init zsh)"
 
 
 # ------------------------------------------------------------
@@ -167,3 +164,11 @@ fi
 source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 export GPG_TTY=$(tty)
 export SSH_AUTH_SOCK="/run/user/$(id -u)/ssh-agent.sock"
+
+# bun completions
+[ -s "/home/raf/.bun/_bun" ] && source "/home/raf/.bun/_bun"
+
+HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_FOUND=''
+HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_NOT_FOUND=''
+export PATH="$HOME/.npm-global/bin:$PATH"
+
