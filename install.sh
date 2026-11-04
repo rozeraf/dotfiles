@@ -92,7 +92,7 @@ confirm() {
 		return 0
 	fi
 	local answer
-	read -r -p "$prompt [y/N] " answer
+	read -r -p "$prompt [y/N] " answer || answer=""
 	[[ $answer == [yY] || $answer == [yY][eE][sS] ]]
 }
 
@@ -170,9 +170,9 @@ choose_repositories() {
 			else
 				local answer
 				if [[ $PLATFORM == artix ]]; then
-					read -r -p "Configure raf and protected Arch [extra] repositories? [Y/n] " answer
+					read -r -p "Configure raf and protected Arch [extra] repositories? [Y/n] " answer || answer=""
 				else
-					read -r -p "Configure the raf package repository? [Y/n] " answer
+					read -r -p "Configure the raf package repository? [Y/n] " answer || answer=""
 				fi
 				[[ $answer != [nN] && $answer != [nN][oO] ]] && USE_ADDITIONAL_REPOS=true
 			fi
@@ -263,7 +263,7 @@ configure_repositories() {
 		install_system_file "$SCRIPT_DIR/pacman/mirrorlist-arch" "/etc/pacman.d/mirrorlist-arch"
 	fi
 	if [[ $PLATFORM == artix ]]; then
-		awk -f "$SCRIPT_DIR/pacman/strip-managed-repositories.awk" /etc/pacman.conf > "$rendered"
+		awk -v repository_file="$repository_file" -f "$SCRIPT_DIR/pacman/strip-managed-repositories.awk" /etc/pacman.conf > "$rendered"
 		printf '\n' >> "$rendered"
 		awk '1' "$repository_file" >> "$rendered"
 	else
@@ -287,6 +287,20 @@ configure_repositories() {
 	fi
 	rm -f -- "$rendered"
 	run sudo pacman -Syy
+}
+
+require_commands() {
+	local command missing=()
+	local required=(pacman awk realpath cmp mktemp find)
+	$INSTALL_PACKAGES && required+=(sudo)
+	for command in "${required[@]}"; do
+		command -v "$command" >/dev/null 2>&1 || missing+=("$command")
+	done
+	((${#missing[@]} == 0)) || die "missing required commands: ${missing[*]}"
+	if $INSTALL_PACKAGES && ! $DRY_RUN; then
+		log "checking sudo access"
+		sudo -v || die "sudo access is required to install packages"
+	fi
 }
 
 detect_platform() {
@@ -321,7 +335,7 @@ choose_platform() {
 	printf '  1) Arch Linux%s\n' "$arch_label"
 	printf '  2) Artix Linux%s\n' "$artix_label"
 	local choice
-	read -r -p "Choice [${detected:-none}]: " choice
+	read -r -p "Choice [${detected:-none}]: " choice || choice=""
 	case $choice in
 		1|arch) PLATFORM=arch ;;
 		2|artix) PLATFORM=artix ;;
@@ -347,7 +361,7 @@ select_components() {
 		for index in "${!ALL_COMPONENTS[@]}"; do
 			printf '  %d) %s\n' "$((index + 1))" "${ALL_COMPONENTS[index]}"
 		done
-		read -r -p "Select numbers/names separated by commas [all]: " input
+		read -r -p "Select numbers/names separated by commas [all]: " input || input=""
 		input=${input:-all}
 	fi
 
@@ -392,9 +406,10 @@ resolve_packages() {
 	AUR_PACKAGES=()
 
 	if [[ ${SELECTED[niri]:-} ]]; then
-		for package in niri xdg-desktop-portal xdg-desktop-portal-gtk xwayland-satellite wl-clipboard; do
+		for package in niri xdg-desktop-portal xdg-desktop-portal-gtk xwayland-satellite wl-clipboard yazi; do
 			add_unique REPO_PACKAGES "$package"
 		done
+		[[ $PLATFORM == arch ]] && add_unique REPO_PACKAGES ly
 		add_unique AUR_PACKAGES zen-browser-bin
 	fi
 
@@ -427,19 +442,14 @@ resolve_packages() {
 	fi
 
 	if [[ ${SELECTED[nvim]:-} ]]; then
-		for package in neovim clang uv; do
+		# clang provides clang-format; the other formatters are used by conform.nvim.
+		for package in neovim clang stylua python-black prettier ripgrep fd wl-clipboard; do
 			add_unique REPO_PACKAGES "$package"
 		done
-		command -v cargo >/dev/null 2>&1 || add_unique REPO_PACKAGES rust
-		if pacman -Si bun >/dev/null 2>&1; then
-			add_unique REPO_PACKAGES bun
-		else
-			add_unique AUR_PACKAGES bun-bin
-		fi
 	fi
 
 	if [[ ${SELECTED[zsh]:-} ]]; then
-		for package in zsh fzf zoxide ripgrep fd bat zsh-autosuggestions zsh-history-substring-search zsh-syntax-highlighting; do
+		for package in zsh fzf zoxide ripgrep fd bat wl-clipboard openssh zsh-autosuggestions zsh-history-substring-search zsh-syntax-highlighting; do
 			add_unique REPO_PACKAGES "$package"
 		done
 	fi
@@ -503,9 +513,20 @@ install_repo_packages() {
 		return 0
 	fi
 
+	# pacman --noconfirm declines conflict removals, so an existing PulseAudio
+	# install (an archinstall option) would abort the PipeWire transaction.
+	local pacman_flags=(--needed --noconfirm)
+	if [[ ${SELECTED[pipewire]:-} ]] && pacman -Qq pulseaudio >/dev/null 2>&1; then
+		if confirm "PulseAudio is installed. Replace it with PipeWire?"; then
+			pacman_flags+=(--ask=4)
+		else
+			warn "PulseAudio kept; the PipeWire packages will likely conflict"
+		fi
+	fi
+
 	local attempt
 	for attempt in 1 2; do
-		if sudo pacman -Syu --needed --noconfirm "${REPO_PACKAGES[@]}"; then
+		if sudo pacman -Syu "${pacman_flags[@]}" "${REPO_PACKAGES[@]}"; then
 			return 0
 		fi
 		if ((attempt == 1)); then
@@ -569,6 +590,14 @@ link_path() {
 			SKIPPED+=("$target")
 			return
 		fi
+	fi
+
+	# A parent directory already links into the repository (for example
+	# ~/.config/nvim -> dotfiles/nvim): the target *is* the source. Moving it
+	# away would remove the file from the repository.
+	if [[ -e $target ]] && [[ $(realpath -- "$target") == $(realpath -m -- "$source") ]]; then
+		SKIPPED+=("$target")
+		return
 	fi
 
 	if [[ -e $target || -L $target ]]; then
@@ -702,7 +731,10 @@ deploy_component() {
 ensure_repo() {
 	local url=$1 directory=$2
 	if [[ -d $directory/.git ]]; then
-		run env GIT_TERMINAL_PROMPT=0 git -c credential.helper= -C "$directory" pull --ff-only
+		print_command env GIT_TERMINAL_PROMPT=0 git -c credential.helper= -C "$directory" pull --ff-only
+		if ! $DRY_RUN && ! env GIT_TERMINAL_PROMPT=0 git -c credential.helper= -C "$directory" pull --ff-only; then
+			warn "cannot fast-forward $directory; using the existing checkout"
+		fi
 	elif [[ -d $directory ]] && [[ -z $(find "$directory" -mindepth 1 -maxdepth 1 -print -quit) ]]; then
 		run rmdir -- "$directory"
 		run env GIT_TERMINAL_PROMPT=0 git -c credential.helper= clone "$url" "$directory"
@@ -733,12 +765,6 @@ install_source_tools() {
 	if [[ ${SELECTED[tutors]:-} ]]; then
 		ensure_repo https://github.com/rozeraf/tutors.git "$projects_dir/tutors"
 		run make -C "$projects_dir/tutors" PREFIX="$HOME/.local" install
-	fi
-
-	if [[ ${SELECTED[nvim]:-} ]]; then
-		if $DRY_RUN || command -v uv >/dev/null 2>&1; then run uv tool install black; fi
-		if $DRY_RUN || command -v cargo >/dev/null 2>&1; then run cargo install --locked stylua; fi
-		if $DRY_RUN || command -v bun >/dev/null 2>&1; then run bun add --global prettier; fi
 	fi
 }
 
@@ -789,8 +815,51 @@ activate_pipewire() {
 			run_optional dinitctl --user start "$service"
 		done
 	else
-		run systemctl --user enable pipewire.service pipewire-pulse.service wireplumber.service
+		run_optional systemctl --user enable pipewire.service pipewire-pulse.service wireplumber.service
 		run_optional systemctl --user start pipewire.service pipewire-pulse.service wireplumber.service
+	fi
+}
+
+activate_ssh_agent() {
+	[[ ${SELECTED[zsh]:-} ]] || return 0
+	[[ $PLATFORM == arch ]] || return 0
+	local source="$SCRIPT_DIR/systemd/ssh-agent.service"
+	local target="$HOME/.config/systemd/user/ssh-agent.service"
+	if $UNINSTALL; then
+		if [[ -L $target ]] && command -v systemctl >/dev/null 2>&1; then
+			run_optional systemctl --user disable --now ssh-agent.service
+		fi
+		unlink_path "$source" "$target"
+		return 0
+	fi
+	link_path "$source" "$target"
+	$PACKAGE_SETUP_READY || return 0
+	log "enable ssh-agent user service"
+	run_optional systemctl --user daemon-reload
+	run_optional systemctl --user enable --now ssh-agent.service
+}
+
+enable_display_manager() {
+	[[ ${SELECTED[niri]:-} ]] || return 0
+	[[ $PLATFORM == arch ]] || return 0
+	$UNINSTALL && return 0
+	$PACKAGE_SETUP_READY || return 0
+
+	if [[ -e /etc/systemd/system/display-manager.service ]]; then
+		log "display manager already enabled: $(readlink -f /etc/systemd/system/display-manager.service)"
+		return 0
+	fi
+	if ! $DRY_RUN && [[ ! -e /usr/lib/systemd/system/ly@.service && ! -e /usr/lib/systemd/system/ly.service ]]; then
+		warn "ly is not installed; start Niri manually with niri-session"
+		return 0
+	fi
+	confirm "Enable the ly display manager on boot?" || return 0
+	if [[ -e /usr/lib/systemd/system/ly.service ]]; then
+		run sudo systemctl enable ly.service
+	else
+		# ly >= 1.1 is a templated unit that takes over a TTY.
+		run_optional sudo systemctl disable getty@tty2.service
+		run sudo systemctl enable ly@tty2.service
 	fi
 }
 
@@ -798,10 +867,18 @@ set_default_shell() {
 	[[ ${SELECTED[zsh]:-} ]] || return 0
 	$UNINSTALL && return 0
 	$PACKAGE_SETUP_READY || return 0
-	command -v zsh >/dev/null 2>&1 || return 0
-	[[ ${SHELL:-} == "$(command -v zsh)" ]] && return 0
+	local zsh_path current_shell
+	# chsh only accepts paths listed in /etc/shells; prefer the canonical one
+	# over whatever PATH resolves first (for example /usr/sbin/zsh).
+	if [[ -x /usr/bin/zsh ]]; then
+		zsh_path=/usr/bin/zsh
+	else
+		zsh_path=$(command -v zsh 2>/dev/null) || return 0
+	fi
+	current_shell=$(getent passwd "$(id -un)" | cut -d: -f7)
+	[[ $(realpath -m -- "${current_shell:-/}") == $(realpath -m -- "$zsh_path") ]] && return 0
 	confirm "Set Zsh as the login shell for ${USER:-$(id -un)}?" || return 0
-	run chsh -s "$(command -v zsh)"
+	run chsh -s "$zsh_path"
 }
 
 print_summary() {
@@ -814,13 +891,14 @@ print_summary() {
 		printf '  backup directory: %s\n' "$BACKUP_DIR"
 	fi
 	if ! $UNINSTALL; then
-		printf '\nLog out and select the Niri session to start the desktop.\n'
+		printf '\nReboot (or log out) and select the Niri session to start the desktop.\n'
 	fi
 }
 
 main() {
 	parse_args "$@"
 	[[ $EUID -ne 0 ]] || die "run this installer as a regular user, not root"
+	require_commands
 	choose_platform
 	select_components
 	choose_repositories
@@ -848,11 +926,13 @@ main() {
 		[[ ${SELECTED[$component]:-} ]] && deploy_component "$component"
 	done
 	activate_pipewire
+	activate_ssh_agent
 
 	if $INSTALL_PACKAGES && $PACKAGE_SETUP_READY && $INSTALL_EXTRAS && ! $UNINSTALL; then
 		confirm "Install/update source-built tools and integrations?" && install_source_tools
 	fi
 
+	enable_display_manager
 	set_default_shell
 	print_summary
 }

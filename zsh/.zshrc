@@ -74,13 +74,16 @@ zstyle ':completion:*' menu no
 # Plugins (hate inits overhead)
 
 # Autosuggestions
-source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+[[ -r /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ]] && \
+    source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 
 # History substring search
-source /usr/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh
+[[ -r /usr/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh ]] && \
+    source /usr/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh
 
 # fzf-tab
-source "$HOME/.local/share/zsh/fzf-tab/fzf-tab.plugin.zsh"
+[[ -r "$HOME/.local/share/zsh/fzf-tab/fzf-tab.plugin.zsh" ]] && \
+    source "$HOME/.local/share/zsh/fzf-tab/fzf-tab.plugin.zsh"
 
 
 # Autosuggestions
@@ -147,12 +150,16 @@ zstyle ':fzf-tab:complete:cd:*' \
 
 # Zoxide
 
-eval "$(zoxide init zsh)"
+if (( $+commands[zoxide] )); then
+    eval "$(zoxide init zsh)"
+fi
 
 
 # Prompt
 
-eval "$(starship init zsh)"
+if (( $+commands[starship] )); then
+    eval "$(starship init zsh)"
+fi
 
 
 # ------------------------------------------------------------
@@ -161,12 +168,14 @@ eval "$(starship init zsh)"
 # Keep this at the END of .zshrc.
 # ------------------------------------------------------------
 
-source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+[[ -r /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] && \
+    source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 export GPG_TTY=$(tty)
-export SSH_AUTH_SOCK="/run/user/$(id -u)/ssh-agent.sock"
 
-# bun completions
-[ -s "/home/raf/.bun/_bun" ] && source "/home/raf/.bun/_bun"
+# ssh-agent socket (dinit service on Artix, systemd user unit on Arch)
+if [[ -S "${XDG_RUNTIME_DIR:-/run/user/$UID}/ssh-agent.sock" ]]; then
+    export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR:-/run/user/$UID}/ssh-agent.sock"
+fi
 
 HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_FOUND=''
 HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_NOT_FOUND=''

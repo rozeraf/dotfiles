@@ -260,4 +260,52 @@ HOME=$noctalia_home "$REPO_DIR/install.sh" \
 [[ ! -e $noctalia_home/.local/state/noctalia && ! -L $noctalia_home/.local/state/noctalia ]] || \
 	fail "Noctalia state link survived modified-config uninstall"
 
+printf 'test: Arch desktop and ssh-agent plan\n'
+output=$(HOME=$TEST_ROOT "$REPO_DIR/install.sh" \
+	--platform arch \
+	--components niri,zsh,nvim \
+	--without-repositories \
+	--no-extras \
+	--dry-run \
+	--yes)
+for package in yazi ly openssh stylua python-black prettier; do
+	[[ $output == *" $package "* ]] || fail "$package was not included in the Arch package plan"
+done
+[[ $output == *"systemd/ssh-agent.service"* ]] || fail "ssh-agent user unit was not deployed"
+[[ $output == *"systemctl --user enable --now ssh-agent.service"* ]] || fail "ssh-agent was not enabled"
+[[ $output != *"cargo install"* && $output != *"bun add"* ]] || fail "formatters are still built from source"
+
+printf 'test: pacman.conf rendering is idempotent\n'
+conf="$TEST_ROOT/pacman.conf"
+printf '[options]\nHoldPkg = pacman\n\n[core]\nInclude = /etc/pacman.d/mirrorlist\n\n[extra]\nInclude = /etc/pacman.d/mirrorlist\n' > "$conf"
+render_arch() {
+	awk -v repository_file="$REPO_DIR/pacman/repositories-arch.conf" \
+		-f "$REPO_DIR/pacman/insert-raf-before-extra.awk" "$1"
+}
+render_artix() {
+	awk -v repository_file="$REPO_DIR/pacman/repositories-artix.conf" \
+		-f "$REPO_DIR/pacman/strip-managed-repositories.awk" "$1"
+	printf '\n'
+	awk '1' "$REPO_DIR/pacman/repositories-artix.conf"
+}
+for renderer in render_arch render_artix; do
+	"$renderer" "$conf" > "$TEST_ROOT/once"
+	"$renderer" "$TEST_ROOT/once" > "$TEST_ROOT/twice"
+	cmp -s "$TEST_ROOT/once" "$TEST_ROOT/twice" || fail "$renderer is not idempotent"
+done
+
+printf 'test: symlinked parent directory keeps repository files\n'
+parent_home="$TEST_ROOT/parent-home"
+mkdir -p -- "$parent_home/.config"
+ln -s -- "$REPO_DIR/nvim" "$parent_home/.config/nvim"
+HOME=$parent_home "$REPO_DIR/install.sh" \
+	--platform arch \
+	--components nvim \
+	--no-packages \
+	--yes >/dev/null
+[[ -f $REPO_DIR/nvim/init.lua && ! -L $REPO_DIR/nvim/init.lua ]] || \
+	fail "installer replaced a repository file through a symlinked parent"
+[[ -d $REPO_DIR/nvim/lua && ! -L $REPO_DIR/nvim/lua ]] || \
+	fail "installer replaced a repository directory through a symlinked parent"
+
 printf 'PASS\n'

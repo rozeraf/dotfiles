@@ -308,7 +308,7 @@ binds {
     }
 
     Mod+W {
-        spawn "/usr/sbin/zen-browser"
+        spawn "zen-browser"
     }
 
     // Noctalia launcher

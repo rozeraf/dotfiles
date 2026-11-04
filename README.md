@@ -25,6 +25,7 @@ dotfiles/
 ├── pacman/       Managed repository blocks and Artix protection hook
 ├── pipewire/      PipeWire and WirePlumber bass EQ settings
 ├── starship/     Starship prompt
+├── systemd/      systemd user units used on Arch (ssh-agent)
 ├── wallfetch/    Independent palette provider config and template
 ├── tests/        Isolated installer tests
 ├── zsh/          Zsh startup, aliases, and functions
@@ -74,6 +75,13 @@ PipeWire, Fastfetch, fonts and Wayland utilities. It can also clone, build, and 
 [`rozeraf/tutors`](https://github.com/rozeraf/tutors). User-built binaries are
 installed into `~/.local/bin`. The three personal tools are built this way only
 in fallback mode; repository mode installs their packages into `/usr/bin`.
+
+On Arch the `niri` component also installs `ly` and offers to enable
+`ly@tty2.service` when no display manager is configured yet, and the `zsh`
+component links `systemd/ssh-agent.service` into `~/.config/systemd/user` and
+enables it, so `SSH_AUTH_SOCK` points at `$XDG_RUNTIME_DIR/ssh-agent.sock` just
+like the Dinit service on Artix. Neovim formatters (`stylua`, `black`,
+`prettier`, `clang-format`) are installed from the official repositories.
 
 Useful modes:
 
