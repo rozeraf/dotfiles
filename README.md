@@ -28,6 +28,7 @@ dotfiles/
 ├── systemd/      systemd user units used on Arch (ssh-agent)
 ├── wallfetch/    Independent palette provider config and template
 ├── tests/        Isolated installer tests
+├── wallpapers/   Wallpapers copied into ~/Pictures/Wallpapers (never overwritten)
 ├── zsh/          Zsh startup, aliases, and functions
 └── elx/          elx file-listing config
 ```

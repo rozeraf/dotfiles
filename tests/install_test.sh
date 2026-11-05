@@ -308,4 +308,13 @@ HOME=$parent_home "$REPO_DIR/install.sh" \
 [[ -d $REPO_DIR/nvim/lua && ! -L $REPO_DIR/nvim/lua ]] || \
 	fail "installer replaced a repository directory through a symlinked parent"
 
+printf 'test: wallpapers are seeded without overwriting\n'
+wall_home="$TEST_ROOT/wall-home"
+mkdir -p -- "$wall_home/Pictures/Wallpapers"
+printf 'mine\n' > "$wall_home/Pictures/Wallpapers/overlapping-pills-1920x1080.png"
+HOME=$wall_home "$REPO_DIR/install.sh" --platform arch --components noctalia --no-packages --yes >/dev/null
+[[ $(<"$wall_home/Pictures/Wallpapers/overlapping-pills-1920x1080.png") == mine ]] || fail "existing wallpaper was overwritten"
+cmp -s "$REPO_DIR/wallpapers/overlapping-pills-1920x1080(1).png" "$wall_home/Pictures/Wallpapers/overlapping-pills-1920x1080(1).png" || \
+	fail "wallpaper referenced by Noctalia settings was not copied"
+
 printf 'PASS\n'

@@ -667,6 +667,24 @@ seed_directory() {
 	INSTALLED+=("$target")
 }
 
+# Copy each file that is missing in the target directory. Existing files are
+# never replaced, so the directory stays an ordinary user-owned collection.
+seed_files() {
+	local source_dir=$1 target_dir=$2 source target
+	[[ -d $source_dir ]] || die "missing repository directory: $source_dir"
+	run mkdir -p "$target_dir"
+	for source in "$source_dir"/*; do
+		[[ -f $source ]] || continue
+		target="$target_dir/$(basename -- "$source")"
+		if [[ -e $target || -L $target ]]; then
+			SKIPPED+=("$target")
+		else
+			run cp -p "$source" "$target"
+			INSTALLED+=("$target")
+		fi
+	done
+}
+
 remove_copied_directory() {
 	local source=$1 target=$2
 	if [[ -d $target && ! -L $target ]] && diff -qr -- "$source" "$target" >/dev/null 2>&1; then
@@ -693,7 +711,7 @@ deploy_component() {
 			else
 				seed_directory "$SCRIPT_DIR/noctalia" "$HOME/.config/noctalia"
 				link_path "$HOME/.config/noctalia" "$HOME/.local/state/noctalia" true
-				run mkdir -p "$HOME/Pictures/Wallpapers"
+				seed_files "$SCRIPT_DIR/wallpapers" "$HOME/Pictures/Wallpapers"
 			fi
 			;;
 		pipewire)
