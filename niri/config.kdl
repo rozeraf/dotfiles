@@ -35,6 +35,8 @@ input {
         // Lower sensitivity.
         // Valid range: -1.0 .. 1.0
         accel-speed -0.35
+        scroll-method "on-button-down"
+        scroll-button 274
     }
 }
 
@@ -44,6 +46,7 @@ input {
 // ------------------------------------------------------------
 
 spawn-at-startup "noctalia"
+spawn-at-startup "ghostty"
 
 
 // ------------------------------------------------------------
@@ -299,12 +302,12 @@ binds {
     // -------------------------
 
     Mod+Return {
-        spawn "ghostty"
+        spawn "ghostty" "+new-window";
     }
 
 
     Mod+E {
-        spawn "ghostty" "-e" "yazi";
+        spawn "ghostty" "+new-window" "-e" "yazi";
     }
 
     Mod+W {
@@ -497,17 +500,10 @@ Super+V {
     // Screenshots
     // -------------------------
 
-    Print {
-        screenshot
-    }
-
-    Alt+Print {
-        screenshot-window
-    }
-
-    Ctrl+Print {
-        screenshot-screen
-    }
+    Mod+Shift+S   { spawn-sh "noctalia msg screenshot-region --no-annotate"; }
+    Insert        { spawn-sh "noctalia msg screenshot-region --annotate"; }
+    Alt+Insert    { spawn-sh "noctalia msg screenshot-window"; }
+    Ctrl+Insert   { spawn-sh "noctalia msg screenshot-fullscreen"; }
 
 
     // -------------------------

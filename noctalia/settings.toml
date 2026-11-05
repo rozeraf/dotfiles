@@ -1,4 +1,4 @@
-config_version = 13
+config_version = 16
 
 [audio]
 enable_overdrive = true
@@ -17,10 +17,11 @@ order = [ "default", "bar" ]
     start = []
 
     [bar.default]
+    capsule_group = []
     enabled = true
-    end = [ "tray", "keyboard_layout", "volume", "battery", "session" ]
+    end = [ "tray", "keyboard_layout", "widget", "volume", "battery", "session" ]
     margin_ends = 0
-    start = [ "launcher", "widget", "media" ]
+    start = [ "appmenu", "media" ]
 
         [bar.default.dead_zone.actions]
         scroll_down = "volume-down 2"
@@ -31,6 +32,12 @@ order = [ "default", "bar" ]
     enabled = false
     end = []
     start = []
+
+[dock]
+auto_hide = false
+enabled = true
+reserve_space = false
+smart_auto_hide = true
 
 [lockscreen_widgets]
 enabled = false
@@ -54,7 +61,7 @@ widget_order = [ "lockscreen-login-box@HDMI-A-1" ]
     type = "login_box"
 
         [lockscreen_widgets.widget."lockscreen-login-box@HDMI-A-1".settings]
-        background_color = "surface_variant"
+        background_color = "surface_container"
         background_opacity = 0.88
         background_radius = 12.0
         center_password_text = false
@@ -70,13 +77,17 @@ widget_order = [ "lockscreen-login-box@HDMI-A-1" ]
         show_weather = true
 
 [plugins]
-enabled = [ "alexander/screen-toolkit" ]
+enabled = [ "alexander/screen-toolkit", "raf/global-menu" ]
 
 [shell]
 clipboard_auto_paste = "off"
 
     [shell.launcher]
+    app_grid = false
     auto_paste = "off"
+
+    [shell.screenshot]
+    annotate = false
 
 [theme]
 source = "wallpaper"
@@ -90,16 +101,23 @@ wallpaper_scheme = "m3-rainbow"
 directory = "/home/raf/Pictures/Wallpapers"
 
     [wallpaper.default]
-    path = "/home/raf/Pictures/Wallpapers/overlapping-pills-1920x1080(8).png"
+    path = "/home/raf/Pictures/Wallpapers/overlapping-pills-1920x1080(1).png"
 
     [wallpaper.last]
-    path = "/home/raf/Pictures/Wallpapers/overlapping-pills-1920x1080(8).png"
+    path = "/home/raf/Pictures/Wallpapers/overlapping-pills-1920x1080(1).png"
 
     [wallpaper.monitors.HDMI-A-1]
-    path = "/home/raf/Pictures/Wallpapers/overlapping-pills-1920x1080(8).png"
+    path = "/home/raf/Pictures/Wallpapers/overlapping-pills-1920x1080(1).png"
+
+[widget.appmenu]
+capsule = true
+type = "raf/global-menu:menubar"
 
 [widget.keyboard_layout]
 show_glyph = false
+
+[widget.media]
+hide_when_no_media = true
 
 [widget.notifications]
 anchor = true

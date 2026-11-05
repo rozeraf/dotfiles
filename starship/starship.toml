@@ -119,26 +119,26 @@ disabled = true
 
 [palettes.noctalia]
 # Standard colors
-blue      = "#eeb8cb"
+blue      = "#efb8c9"
 red       = "#ffb4ab"
-green     = "#cbbeff"
-yellow    = "#cac3dc"
-cyan      = "#cac3dc"
-magenta   = "#cbbeff"
+green     = "#cdbdff"
+yellow    = "#cbc3dc"
+cyan      = "#cbc3dc"
+magenta   = "#cdbdff"
 white     = "#e2e2e2"
 black     = "#474747"
 
 # Extended palette (Catppuccin-compatible names)
-rosewater = "#cac3dc"
+rosewater = "#cbc3dc"
 flamingo  = "#ffb4ab"
-pink      = "#cbbeff"
-mauve     = "#cbbeff"
+pink      = "#cdbdff"
+mauve     = "#cdbdff"
 maroon    = "#ffb4ab"
-peach     = "#cac3dc"
-teal      = "#cac3dc"
-sky       = "#cac3dc"
-sapphire  = "#eeb8cb"
-lavender  = "#cbbeff"
+peach     = "#cbc3dc"
+teal      = "#cbc3dc"
+sky       = "#cbc3dc"
+sapphire  = "#efb8c9"
+lavender  = "#cdbdff"
 
 # Text shades
 text      = "#e2e2e2"

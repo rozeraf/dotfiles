@@ -83,6 +83,12 @@ enables it, so `SSH_AUTH_SOCK` points at `$XDG_RUNTIME_DIR/ssh-agent.sock` just
 like the Dinit service on Artix. Neovim formatters (`stylua`, `black`,
 `prettier`, `clang-format`) are installed from the official repositories.
 
+The `noctalia` component also installs the `raf/global-menu` plugin from the
+private `rozeraf/noctalia-appmenu` repository (its daemon is built with Cargo
+and needs `libdbusmenu-glib`). Log in with `gh auth login` before running the
+installer, otherwise this step is skipped with a warning and can be repeated
+later with `./install.sh --components noctalia`.
+
 Useful modes:
 
 ```bash

@@ -402,7 +402,7 @@ add_unique() {
 }
 
 resolve_packages() {
-	REPO_PACKAGES=(base-devel git curl ca-certificates)
+	REPO_PACKAGES=(base-devel git github-cli curl ca-certificates)
 	AUR_PACKAGES=()
 
 	if [[ ${SELECTED[niri]:-} ]]; then
@@ -414,7 +414,9 @@ resolve_packages() {
 	fi
 
 	if [[ ${SELECTED[noctalia]:-} ]]; then
-		for package in brightnessctl playerctl cliphist imagemagick jq polkit grim slurp tesseract tesseract-data-eng; do
+		# libdbusmenu-glib and cargo are needed by the noctalia-appmenu (global-menu) plugin.
+		command -v cargo >/dev/null 2>&1 || add_unique REPO_PACKAGES rust
+		for package in brightnessctl playerctl cliphist imagemagick jq polkit grim slurp tesseract tesseract-data-eng libdbusmenu-glib; do
 			add_unique REPO_PACKAGES "$package"
 		done
 		if [[ $PLATFORM == arch || $USE_ADDITIONAL_REPOS == true ]]; then
@@ -707,6 +709,7 @@ deploy_component() {
 		nvim)
 			$action "$SCRIPT_DIR/nvim/init.lua" "$HOME/.config/nvim/init.lua"
 			$action "$SCRIPT_DIR/nvim/lua" "$HOME/.config/nvim/lua"
+			$action "$SCRIPT_DIR/nvim/lazy-lock.json" "$HOME/.config/nvim/lazy-lock.json"
 			;;
 		zsh)
 			$action "$SCRIPT_DIR/zsh/.zshrc" "$HOME/.zshrc"
@@ -745,6 +748,35 @@ ensure_repo() {
 	fi
 }
 
+# noctalia-appmenu provides the raf/global-menu plugin used by the "appmenu"
+# bar widget. The repository is private, so cloning relies on an existing
+# checkout or on Git credentials (for example `gh auth setup-git`). Without
+# access the step is skipped and the rest of the setup continues.
+install_appmenu() {
+	local directory=$1
+	local url=https://github.com/rozeraf/noctalia-appmenu.git
+	if [[ ! -d $directory/.git ]]; then
+		print_command env GIT_TERMINAL_PROMPT=0 git clone "$url" "$directory"
+		if ! $DRY_RUN; then
+			local clone=(env GIT_TERMINAL_PROMPT=0 git)
+			if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+				clone+=(-c credential.helper= -c 'credential.helper=!gh auth git-credential')
+			fi
+			if ! "${clone[@]}" clone "$url" "$directory"; then
+				warn "cannot clone private $url; the appmenu widget stays empty."
+				warn "run 'gh auth login', then: ./install.sh --components noctalia"
+				return 0
+			fi
+		fi
+	else
+		print_command git -C "$directory" pull --ff-only
+		if ! $DRY_RUN && ! env GIT_TERMINAL_PROMPT=0 git -C "$directory" pull --ff-only; then
+			warn "cannot fast-forward $directory; using the existing checkout"
+		fi
+	fi
+	run_optional "$directory/install.sh"
+}
+
 install_source_tools() {
 	local projects_dir=${PROJECTS_DIR:-$HOME/projects}
 
@@ -760,6 +792,10 @@ install_source_tools() {
 	if [[ ${SELECTED[elx]:-} ]] && ! $USE_ADDITIONAL_REPOS; then
 		ensure_repo https://github.com/rozeraf/elx.git "$projects_dir/elx"
 		run make -C "$projects_dir/elx" install
+	fi
+
+	if [[ ${SELECTED[noctalia]:-} ]]; then
+		install_appmenu "$projects_dir/noctalia-appmenu"
 	fi
 
 	if [[ ${SELECTED[tutors]:-} ]]; then
