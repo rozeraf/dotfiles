@@ -1,0 +1,77 @@
+# Arch packages installed on the desktop that install.sh does not cover.
+# Install with:
+#   sudo pacman -S --needed - < <(grep -v '^#' pacman/packages-arch.txt | grep .)
+#
+# Artix-only packages (*-dinit, elogind, turnstile, artix-*) are omitted.
+# zramen is replaced by zram-generator on Arch.
+
+# Base system and boot
+base
+linux-zen
+linux-firmware
+intel-ucode
+mkinitcpio
+limine
+efibootmgr
+dosfstools
+exfatprogs
+sudo-rs
+man-db
+man-pages
+zram-generator
+
+# Hardware, network and disks
+vulkan-radeon
+networkmanager
+iwd
+tailscale
+nginx
+smartmontools
+udisks2
+tcpdump
+traceroute
+reflector
+
+# Desktop and Wayland
+gnome-keyring
+hyprpicker
+wf-recorder
+wlrctl
+xorg-xwayland
+xorg-server
+xorg-xinit
+openbox
+libdbusmenu-gtk3
+webkit2gtk-4.1
+libpulse
+pipewire-jack
+
+# Fonts
+noto-fonts-cjk
+ttf-dejavu
+ttf-liberation
+
+# Applications
+telegram-desktop
+obsidian
+libreoffice-fresh
+mpv
+proton-vpn-gtk-app
+protontricks
+
+# CLI and development
+7zip
+zip
+rsync
+wget
+bc
+ncdu
+vim
+gitu
+go
+cmake
+android-tools
+android-udev
+pandoc-cli
+python-pillow
+yt-dlp

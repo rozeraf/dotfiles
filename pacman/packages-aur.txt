@@ -1,0 +1,9 @@
+# AUR packages installed on the desktop that install.sh does not cover.
+# Install with:
+#   paru -S --needed - < <(grep -v '^#' pacman/packages-aur.txt | grep .)
+
+abtop
+elyprismlauncher-bin
+jdk8-temurin
+protonup-qt
+ungoogled-chromium-bin
