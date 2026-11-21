@@ -42,11 +42,25 @@ input {
 
 
 // ------------------------------------------------------------
+// OUTPUT — Samsung SMB2230W, 1680x1050 (16:10), ~90 DPI
+// ------------------------------------------------------------
+
+output "HDMI-A-1" {
+    mode "1680x1050@59.883"
+    // Native ~90 DPI: дробный scale не нужен, 1.0 = максимум полезной площади.
+    scale 1
+    transform "normal"
+    position x=0 y=0
+}
+
+
+// ------------------------------------------------------------
 // STARTUP
 // ------------------------------------------------------------
 
 spawn-at-startup "noctalia"
-spawn-at-startup "ghostty"
+// trap: игнорируем SIGUSR2, пока ghostty не поставил свой обработчик (иначе его убивает reload-хук темы noctalia при старте)
+spawn-sh-at-startup "trap '' USR2; exec ghostty --initial-window=false"
 
 
 // ------------------------------------------------------------
@@ -56,6 +70,11 @@ spawn-at-startup "ghostty"
 prefer-no-csd
 
 screenshot-path "~/Pictures/Screenshots/Screenshot_%Y-%m-%d_%H-%M-%S.png"
+
+// Не показывать в гайде действия без бинда ("(not bound)").
+hotkey-overlay {
+    hide-not-bound
+}
 
 cursor {
     hide-when-typing
@@ -68,19 +87,30 @@ cursor {
 // ------------------------------------------------------------
 
 layout {
-    gaps 12
+    // 1680px по ширине: меньшие гэпы = больше места под контент.
+    gaps 8
 
     center-focused-column "on-overflow"
     always-center-single-column
 
+    // 1/3 ≈ 550px (терминал ~80 колонок), 1/2 ≈ 836px, 2/3 ≈ 1115px,
+    // 1.0 — вся ширина. Две колонки по 1/2 — основной режим на 1680.
     preset-column-widths {
         proportion 0.33333
         proportion 0.5
         proportion 0.66667
+        proportion 1.0
     }
 
     default-column-width {
         proportion 0.5
+    }
+
+    // 1050px по высоте — мало для 3 окон в колонке, поэтому 1/3, 1/2, 2/3.
+    preset-window-heights {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
     }
 
     focus-ring {
@@ -96,11 +126,12 @@ layout {
         off
     }
 
+    // Компактнее тень при гэпах 8px, чтобы не «наползала» на соседей.
     shadow {
         on
-        softness 30
-        spread 5
-        offset x=0 y=5
+        softness 20
+        spread 3
+        offset x=0 y=4
         color "#00000050"
     }
 
@@ -120,7 +151,7 @@ layout {
 // windows: otherwise the focus ring is drawn as a solid rectangle
 // behind the window and can visually kill the blur when focused.
 window-rule {
-    geometry-corner-radius 14
+    geometry-corner-radius 10
     clip-to-geometry true
     draw-border-with-background false
 }
@@ -172,12 +203,13 @@ window-rule {
 
     open-floating true
 
+    // 920px не помещалось в 1050 вместе с баром — пропорции от экрана.
     default-column-width {
-        fixed 1080
+        proportion 0.62
     }
 
     default-window-height {
-        fixed 920
+        proportion 0.8
     }
 }
 
@@ -275,7 +307,7 @@ animations {
 
     horizontal-view-movement {
         spring damping-ratio=1.0 stiffness=800 epsilon=0.0001
-    }
+  }
 
     window-movement {
         spring damping-ratio=1.0 stiffness=800 epsilon=0.0001
@@ -298,242 +330,161 @@ animations {
 binds {
 
     // -------------------------
+    // Niri guide (hotkey overlay)
+    // -------------------------
+
+    // Super + .  /  Super + >  /  Super + ю (same key on RU layout)
+    Mod+Period repeat=false hotkey-overlay-title="Показать эту подсказку по биндам" { show-hotkey-overlay; }
+    Mod+Shift+Period repeat=false hotkey-overlay-title=null { show-hotkey-overlay; }
+    Mod+Cyrillic_yu repeat=false hotkey-overlay-title=null { show-hotkey-overlay; }
+    Mod+Shift+Cyrillic_yu repeat=false hotkey-overlay-title=null { show-hotkey-overlay; }
+
+
+    // -------------------------
     // Applications
     // -------------------------
 
-    Mod+Return {
-        spawn "ghostty" "+new-window";
-    }
+    Mod+Return hotkey-overlay-title="Терминал (Ghostty)" { spawn "ghostty" "+new-window"; }
+    Mod+E hotkey-overlay-title="Файловый менеджер (Yazi)" { spawn "ghostty" "+new-window" "-e" "yazi"; }
+    Mod+W hotkey-overlay-title="Браузер (Zen)" { spawn "/usr/sbin/zen-browser"; }
 
-
-    Mod+E {
-        spawn "ghostty" "+new-window" "-e" "yazi";
-    }
-
-    Mod+W {
-        spawn "zen-browser"
-    }
-
-    // Noctalia launcher
-    Mod+D {
-        spawn-sh "noctalia msg panel-toggle launcher"
-    }
-
-    // Noctalia control center
-    Mod+S {
-        spawn-sh "noctalia msg panel-toggle control-center"
-    }
-
-Super+V {
-    spawn "noctalia" "msg" "panel-toggle" "clipboard";
-}
-
-    // Noctalia settings
-    Mod+Comma {
-        spawn-sh "noctalia msg settings-toggle"
-    }
-
-    // Noctalia window switcher
-    Alt+Tab {
-        spawn-sh "noctalia msg window-switcher"
-    }
+    // Noctalia
+    Mod+D hotkey-overlay-title="Лаунчер приложений" { spawn-sh "noctalia msg panel-toggle launcher"; }
+    Mod+S hotkey-overlay-title="Центр управления" { spawn-sh "noctalia msg panel-toggle control-center"; }
+    Super+V hotkey-overlay-title="История буфера обмена" { spawn "noctalia" "msg" "panel-toggle" "clipboard"; }
+    Mod+Comma hotkey-overlay-title="Настройки Noctalia" { spawn-sh "noctalia msg settings-toggle"; }
+    Alt+Tab hotkey-overlay-title="Переключатель окон" { spawn-sh "noctalia msg window-switcher"; }
 
 
     // -------------------------
     // Niri overview
     // -------------------------
 
-    Mod+O repeat=false {
-        toggle-overview
-    }
+    Mod+O repeat=false hotkey-overlay-title="Обзор (overview)" { toggle-overview; }
 
 
     // -------------------------
     // Window focus
     // -------------------------
 
-    Mod+H {
-        focus-column-left
-    }
-
-    Mod+L {
-        focus-column-right
-    }
-
-    Mod+J {
-        focus-window-down
-    }
-
-    Mod+K {
-        focus-window-up
-    }
-
-    Mod+Left {
-        focus-column-left
-    }
-
-    Mod+Right {
-        focus-column-right
-    }
-
-    Mod+Down {
-        focus-window-down
-    }
-
-    Mod+Up {
-        focus-window-up
-    }
+    // В гайде пары схлопнуты в одну строку, чтобы он влезал в 1050px.
+    Mod+H     hotkey-overlay-title="Фокус: колонка ← / → (H / L, стрелки)" { focus-column-left; }
+    Mod+L     hotkey-overlay-title=null { focus-column-right; }
+    Mod+J     hotkey-overlay-title="Фокус: окно ↓ / ↑ (J / K, стрелки)" { focus-window-down; }
+    Mod+K     hotkey-overlay-title=null { focus-window-up; }
+    Mod+Left  hotkey-overlay-title=null { focus-column-left; }
+    Mod+Right hotkey-overlay-title=null { focus-column-right; }
+    Mod+Down  hotkey-overlay-title=null { focus-window-down; }
+    Mod+Up    hotkey-overlay-title=null { focus-window-up; }
 
 
     // -------------------------
     // Move windows
     // -------------------------
 
-    Mod+Ctrl+H {
-        move-column-left
-    }
-
-    Mod+Ctrl+L {
-        move-column-right
-    }
-
-    Mod+Ctrl+J {
-        move-window-down
-    }
-
-    Mod+Ctrl+K {
-        move-window-up
-    }
+    Mod+Ctrl+H hotkey-overlay-title="Переместить колонку ← / → (Ctrl+H / L)" { move-column-left; }
+    Mod+Ctrl+L hotkey-overlay-title=null { move-column-right; }
+    Mod+Ctrl+J hotkey-overlay-title="Переместить окно ↓ / ↑ (Ctrl+J / K)" { move-window-down; }
+    Mod+Ctrl+K hotkey-overlay-title=null { move-window-up; }
 
 
     // -------------------------
     // Workspaces
     // -------------------------
 
-    Mod+U {
-        focus-workspace-down
-    }
-
-    Mod+I {
-        focus-workspace-up
-    }
-
-    Mod+Ctrl+U {
-        move-column-to-workspace-down
-    }
-
-    Mod+Ctrl+I {
-        move-column-to-workspace-up
-    }
+    Mod+U hotkey-overlay-title="Рабочий стол ниже / выше (U / I)" { focus-workspace-down; }
+    Mod+I hotkey-overlay-title=null { focus-workspace-up; }
+    Mod+Ctrl+U hotkey-overlay-title="Колонку на стол ниже / выше (Ctrl+U / I)" { move-column-to-workspace-down; }
+    Mod+Ctrl+I hotkey-overlay-title=null { move-column-to-workspace-up; }
 
 
-    // Direct workspace access
+    // Direct workspace access (one guide entry for 1–9)
 
-    Mod+1 { focus-workspace 1; }
-    Mod+2 { focus-workspace 2; }
-    Mod+3 { focus-workspace 3; }
-    Mod+4 { focus-workspace 4; }
-    Mod+5 { focus-workspace 5; }
-    Mod+6 { focus-workspace 6; }
-    Mod+7 { focus-workspace 7; }
-    Mod+8 { focus-workspace 8; }
-    Mod+9 { focus-workspace 9; }
+    Mod+1 hotkey-overlay-title="Перейти на рабочий стол 1–9 (Mod+1…9)" { focus-workspace 1; }
+    Mod+2 hotkey-overlay-title=null { focus-workspace 2; }
+    Mod+3 hotkey-overlay-title=null { focus-workspace 3; }
+    Mod+4 hotkey-overlay-title=null { focus-workspace 4; }
+    Mod+5 hotkey-overlay-title=null { focus-workspace 5; }
+    Mod+6 hotkey-overlay-title=null { focus-workspace 6; }
+    Mod+7 hotkey-overlay-title=null { focus-workspace 7; }
+    Mod+8 hotkey-overlay-title=null { focus-workspace 8; }
+    Mod+9 hotkey-overlay-title=null { focus-workspace 9; }
 
 
-    // Move column to workspace
+    // Move column to workspace (one guide entry for 1–9)
 
-    Mod+Ctrl+1 { move-column-to-workspace 1; }
-    Mod+Ctrl+2 { move-column-to-workspace 2; }
-    Mod+Ctrl+3 { move-column-to-workspace 3; }
-    Mod+Ctrl+4 { move-column-to-workspace 4; }
-    Mod+Ctrl+5 { move-column-to-workspace 5; }
-    Mod+Ctrl+6 { move-column-to-workspace 6; }
-    Mod+Ctrl+7 { move-column-to-workspace 7; }
-    Mod+Ctrl+8 { move-column-to-workspace 8; }
-    Mod+Ctrl+9 { move-column-to-workspace 9; }
+    Mod+Ctrl+1 hotkey-overlay-title="Перенести колонку на рабочий стол 1–9 (Mod+Ctrl+1…9)" { move-column-to-workspace 1; }
+    Mod+Ctrl+2 hotkey-overlay-title=null { move-column-to-workspace 2; }
+    Mod+Ctrl+3 hotkey-overlay-title=null { move-column-to-workspace 3; }
+    Mod+Ctrl+4 hotkey-overlay-title=null { move-column-to-workspace 4; }
+    Mod+Ctrl+5 hotkey-overlay-title=null { move-column-to-workspace 5; }
+    Mod+Ctrl+6 hotkey-overlay-title=null { move-column-to-workspace 6; }
+    Mod+Ctrl+7 hotkey-overlay-title=null { move-column-to-workspace 7; }
+    Mod+Ctrl+8 hotkey-overlay-title=null { move-column-to-workspace 8; }
+    Mod+Ctrl+9 hotkey-overlay-title=null { move-column-to-workspace 9; }
 
 
     // -------------------------
     // Window sizing
     // -------------------------
 
-    Mod+R {
-        switch-preset-column-width
-    }
-
-    Mod+Shift+R {
-        switch-preset-column-width-back
-    }
-
-    Mod+M {
-        maximize-column
-    }
-
+    Mod+R hotkey-overlay-title="Preset-ширина колонки: след. / пред. (+Shift)" { switch-preset-column-width; }
+    Mod+Shift+R hotkey-overlay-title=null { switch-preset-column-width-back; }
+    Mod+Ctrl+R hotkey-overlay-title="Следующая preset-высота окна" { switch-preset-window-height; }
+    Mod+Minus hotkey-overlay-title="Ширина колонки ∓10% (- / =)" { set-column-width "-10%"; }
+    Mod+Equal hotkey-overlay-title=null { set-column-width "+10%"; }
+    Mod+Shift+Minus hotkey-overlay-title="Высота окна ∓10% (Shift+- / =)" { set-window-height "-10%"; }
+    Mod+Shift+Equal hotkey-overlay-title=null { set-window-height "+10%"; }
+    Mod+BracketLeft hotkey-overlay-title="Окно в колонку слева / справа ([ / ])" { consume-or-expel-window-left; }
+    Mod+BracketRight hotkey-overlay-title=null { consume-or-expel-window-right; }
+    Mod+M hotkey-overlay-title="Развернуть колонку" { maximize-column; }
     // Maximize to the working-area edges: no gaps, bar stays visible.
-    Mod+F {
-        maximize-window-to-edges
-    }
-
-    Mod+C {
-        center-column
-    }
-
-    Mod+Shift+F {
-        fullscreen-window
-    }
-
-    Mod+V {
-        toggle-window-floating
-    }
+    Mod+F hotkey-overlay-title="Развернуть окно до краёв (бар виден)" { maximize-window-to-edges; }
+    Mod+C hotkey-overlay-title="Центрировать колонку" { center-column; }
+    Mod+Shift+F hotkey-overlay-title="Полноэкранный режим" { fullscreen-window; }
+    Mod+V hotkey-overlay-title="Плавающее / тайловое окно" { toggle-window-floating; }
 
 
     // -------------------------
     // Close
     // -------------------------
 
-    Mod+Q repeat=false {
-        close-window
-    }
+    Mod+Q repeat=false hotkey-overlay-title="Закрыть окно" { close-window; }
 
 
     // -------------------------
     // Screenshots
     // -------------------------
 
-    Mod+Shift+S   { spawn-sh "noctalia msg screenshot-region --no-annotate"; }
-    Insert        { spawn-sh "noctalia msg screenshot-region --annotate"; }
-    Alt+Insert    { spawn-sh "noctalia msg screenshot-window"; }
-    Ctrl+Insert   { spawn-sh "noctalia msg screenshot-fullscreen"; }
+    Mod+Shift+S hotkey-overlay-title="Скриншот области" { spawn-sh "noctalia msg screenshot-region --no-annotate"; }
+    Insert      hotkey-overlay-title="Скриншот области с аннотацией" { spawn-sh "noctalia msg screenshot-region --annotate"; }
+    Alt+Insert  hotkey-overlay-title="Скриншот окна" { spawn-sh "noctalia msg screenshot-window"; }
+    Ctrl+Insert hotkey-overlay-title="Скриншот всего экрана" { spawn-sh "noctalia msg screenshot-fullscreen"; }
+
+
+    // -------------------------
+    // Screen recording — Screen Toolkit (Noctalia plugin)
+    // -------------------------
+
+    Alt+Shift+S repeat=false hotkey-overlay-title="Запись области (MP4)" { spawn-sh "noctalia msg plugin alexander/screen-toolkit:service all recordMp4"; }
+    Ctrl+Alt+S  repeat=false hotkey-overlay-title="Остановить запись" { spawn-sh "noctalia msg plugin alexander/screen-toolkit:service all recordStop"; }
 
 
     // -------------------------
     // Volume — Noctalia
     // -------------------------
 
-    XF86AudioRaiseVolume {
-        spawn-sh "noctalia msg volume-up 2%"
-    }
-
-    XF86AudioLowerVolume {
-        spawn-sh "noctalia msg volume-down 2%"
-    }
-
-    XF86AudioMute {
-        spawn-sh "noctalia msg volume-mute"
-    }
+    XF86AudioRaiseVolume hotkey-overlay-title="Громкость ±2%" { spawn-sh "noctalia msg volume-up 2%"; }
+    XF86AudioLowerVolume hotkey-overlay-title=null { spawn-sh "noctalia msg volume-down 2%"; }
+    XF86AudioMute        hotkey-overlay-title="Выключить / включить звук" { spawn-sh "noctalia msg volume-mute"; }
 
 
     // -------------------------
     // Brightness — Noctalia
     // -------------------------
 
-    XF86MonBrightnessUp {
-        spawn-sh "noctalia msg brightness-up"
-    }
-
-    XF86MonBrightnessDown {
-        spawn-sh "noctalia msg brightness-down"
-    }
+    XF86MonBrightnessUp   hotkey-overlay-title="Яркость ±" { spawn-sh "noctalia msg brightness-up"; }
+    XF86MonBrightnessDown hotkey-overlay-title=null { spawn-sh "noctalia msg brightness-down"; }
 }
 
 
@@ -544,6 +495,7 @@ Super+V {
 debug {
     honor-xdg-activation-with-invalid-serial
 }
+
 
 
 

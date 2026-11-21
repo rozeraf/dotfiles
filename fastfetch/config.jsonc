@@ -3,13 +3,13 @@
   "display": {
     "separator": "",
     "color": {
-      "keys": "#cdbdff",
-      "title": "#cbc3dc"
+      "keys": "#cbbeff",
+      "title": "#cac3dc"
     },
     "percent": {
       "color": {
-        "green": "#efb8c9",
-        "yellow": "#cdbdff",
+        "green": "#eeb8cb",
+        "yellow": "#cbbeff",
         "red": "#ffb4ab"
       }
     }
@@ -24,8 +24,8 @@
       "right": 0
     },
     "color": {
-      "1": "#cd63ff",
-      "2": "#cb63dc"
+      "1": "#cb63ff",
+      "2": "#ca63dc"
     }
   },
   "modules": [

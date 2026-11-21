@@ -177,6 +177,9 @@ if [[ -S "${XDG_RUNTIME_DIR:-/run/user/$UID}/ssh-agent.sock" ]]; then
     export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR:-/run/user/$UID}/ssh-agent.sock"
 fi
 
+# bun completions
+[[ -s "$HOME/.bun/_bun" ]] && source "$HOME/.bun/_bun"
+
 HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_FOUND=''
 HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_NOT_FOUND=''
 export PATH="$HOME/.npm-global/bin:$PATH"
