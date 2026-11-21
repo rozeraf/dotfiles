@@ -1,0 +1,17 @@
+[Unit]
+Description=tlsfrag local proxy (splits TLS ClientHello to bypass SNI-based DPI)
+Documentation=https://github.com/rozeraf/tlsfrag-rs
+After=network-online.target
+
+[Service]
+Type=simple
+# Browsers use it through the PAC file: http://127.0.0.1:8881/proxy.pac
+# Machine-local arguments (for example the --only host list) live outside the
+# repository: TLSFRAG_ARGS="-t --only example.org" in ~/.config/tlsfrag/env
+EnvironmentFile=-%h/.config/tlsfrag/env
+ExecStart=%h/.local/bin/tlsfrag $TLSFRAG_ARGS
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=default.target

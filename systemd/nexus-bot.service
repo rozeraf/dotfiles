@@ -1,0 +1,17 @@
+[Unit]
+Description=nexus-watch Telegram bot
+Documentation=https://github.com/rozeraf/nexus-watch-rs
+# Wants=, not Requires=: the bot retries with backoff, so a backend restart
+# must not stop it.
+Wants=nexus-backend.service
+After=nexus-backend.service network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/projects/nexus-watch-rs
+ExecStart=%h/projects/nexus-watch-rs/target/release/nexus-bot
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

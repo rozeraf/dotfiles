@@ -17,18 +17,25 @@ Personal configuration for an Artix/Arch Linux desktop built around Niri and Noc
 ```text
 dotfiles/
 ├── install.sh    Interactive Arch/Artix bootstrap and linker
+├── btop/         btop config (seeded copy)
+├── chromium/     Chromium flags (tlsfrag PAC proxy)
 ├── fastfetch/    Fastfetch config
 ├── ghostty/      Ghostty terminal config, GTK styling, and generated theme
+├── kitty/        Kitty terminal config
 ├── niri/         Niri compositor and Noctalia integration
 ├── noctalia/     Noctalia user settings
 ├── nvim/         Neovim config managed with lazy.nvim
-├── pacman/       Managed repository blocks and Artix protection hook
+├── pacman/       Managed repository blocks, Artix protection hook, package lists
 ├── pipewire/      PipeWire and WirePlumber bass EQ settings
 ├── starship/     Starship prompt
-├── systemd/      systemd user units used on Arch (ssh-agent)
+├── systemd/      systemd user units used on Arch (ssh-agent, personal services)
 ├── wallfetch/    Independent palette provider config and template
 ├── tests/        Isolated installer tests
 ├── wallpapers/   Wallpapers copied into ~/Pictures/Wallpapers (never overwritten)
+├── xdg/          Default applications (mimeapps.list, seeded copy)
+├── xkb/          Custom XKB option custom:reverse_tilde used by Niri
+├── yazi/         Yazi keymap and Noctalia flavor
+├── zed/          Zed settings (seeded copy)
 ├── zsh/          Zsh startup, aliases, and functions
 └── elx/          elx file-listing config
 ```
@@ -83,6 +90,22 @@ component links `systemd/ssh-agent.service` into `~/.config/systemd/user` and
 enables it, so `SSH_AUTH_SOCK` points at `$XDG_RUNTIME_DIR/ssh-agent.sock` just
 like the Dinit service on Artix. Neovim formatters (`stylua`, `black`,
 `prettier`, `clang-format`) are installed from the official repositories.
+
+The `niri` component also links `xkb/` into `~/.config/xkb`. It defines the
+`custom:reverse_tilde` option used by the keyboard block in `niri/config.kdl`
+(`` ` `` and `~` swapped on the US layout, `ё` kept on the Russian one).
+
+The `apps` component links the Yazi, Kitty and Chromium configs. Btop, Zed and
+`mimeapps.list` are rewritten by their applications with an atomic rename,
+which would replace a symlink, so they are copied only when missing and are
+never overwritten afterwards.
+
+The `services` component (Arch only) links the personal user units
+`nexus-backend`, `nexus-bot` and `tlsfrag` into `~/.config/systemd/user`. Each
+unit is enabled only when its binary has already been built
+(`~/projects/nexus-watch-rs/target/release/*`, `~/.local/bin/tlsfrag`);
+otherwise the installer prints the command to enable it later. On Artix the
+projects ship their own Dinit service files.
 
 The `noctalia` component also installs the `raf/global-menu` plugin from the
 private `rozeraf/noctalia-appmenu` repository (its daemon is built with Cargo
@@ -246,6 +269,18 @@ d/y/x/p       use the system clipboard
 
 The interactive terminal cheatsheets previously stored here now live in the
 separate [`rozeraf/tutors`](https://github.com/rozeraf/tutors) repository.
+
+## Full package set
+
+`pacman/packages-arch.txt` and `pacman/packages-aur.txt` list the remaining
+packages of the desktop that the installer does not manage: base system and
+boot, network, applications, and development tools. Artix-only packages are
+left out. Install them on Arch after `install.sh`:
+
+```bash
+sudo pacman -S --needed - < <(grep -v '^#' pacman/packages-arch.txt | grep .)
+paru -S --needed - < <(grep -v '^#' pacman/packages-aur.txt | grep .)
+```
 
 ## Base dependencies
 

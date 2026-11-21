@@ -1,0 +1,10 @@
+partial alphanumeric_keys
+xkb_symbols "reverse_tilde" {
+    replace key <TLDE> {
+        type[Group1] = "TWO_LEVEL",
+        symbols[Group1] = [ asciitilde, grave ],
+
+        type[Group2] = "ALPHABETIC",
+        symbols[Group2] = [ Cyrillic_io, Cyrillic_IO ]
+    };
+};

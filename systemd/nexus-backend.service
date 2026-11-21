@@ -1,0 +1,15 @@
+[Unit]
+Description=nexus-watch backend
+Documentation=https://github.com/rozeraf/nexus-watch-rs
+After=network-online.target
+
+[Service]
+Type=simple
+# Reads .env and data/ from the working directory.
+WorkingDirectory=%h/projects/nexus-watch-rs
+ExecStart=%h/projects/nexus-watch-rs/target/release/nexus-backend
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

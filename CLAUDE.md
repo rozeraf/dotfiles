@@ -15,6 +15,11 @@ Noctalia. Components:
 - `fastfetch/` — Fastfetch config and wallpaper-derived logo
 - `elx/` — elx file-listing config
 - `starship/` — Starship prompt config
+- `xkb/` — custom XKB option `custom:reverse_tilde`, required by `niri/config.kdl`
+- `yazi/`, `kitty/`, `chromium/`, `btop/`, `zed/`, `xdg/` — the `apps` component;
+  btop, Zed and `mimeapps.list` are seeded copies, not symlinks
+- `systemd/` — ssh-agent plus personal user services (`services` component, Arch only)
+- `pacman/packages-*.txt` — remaining Arch/AUR packages not managed by `install.sh`
 
 ## Build & Install
 

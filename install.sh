@@ -3,7 +3,7 @@
 set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
-ALL_COMPONENTS=(niri noctalia pipewire ghostty nvim zsh starship fastfetch elx tutors)
+ALL_COMPONENTS=(niri noctalia pipewire ghostty nvim zsh starship fastfetch elx apps services tutors)
 
 PLATFORM=""
 DRY_RUN=false
@@ -42,7 +42,7 @@ Options:
   --help, -h                Show this help
 
 Components:
-  niri noctalia pipewire ghostty nvim zsh starship fastfetch elx tutors
+  niri noctalia pipewire ghostty nvim zsh starship fastfetch elx apps services tutors
 
 Examples:
   ./install.sh
@@ -476,6 +476,14 @@ resolve_packages() {
 		fi
 	fi
 
+	if [[ ${SELECTED[apps]:-} ]]; then
+		for package in yazi kitty btop zed; do
+			add_unique REPO_PACKAGES "$package"
+		done
+		# yazi's <C-n> binding drags files with ripdrag.
+		add_unique AUR_PACKAGES ripdrag
+	fi
+
 	if [[ ${SELECTED[tutors]:-} ]]; then
 		add_unique REPO_PACKAGES clang
 		add_unique REPO_PACKAGES make
@@ -685,6 +693,30 @@ seed_files() {
 	done
 }
 
+# Copy a single file only when the target is missing. Used for configs that the
+# application rewrites with an atomic rename, which would replace a symlink.
+seed_file() {
+	local source=$1 target=$2
+	[[ -f $source ]] || die "missing repository file: $source"
+	if [[ -e $target || -L $target ]]; then
+		SKIPPED+=("$target")
+		return 0
+	fi
+	run mkdir -p "$(dirname -- "$target")"
+	run cp -p "$source" "$target"
+	INSTALLED+=("$target")
+}
+
+remove_copied_file() {
+	local source=$1 target=$2
+	if [[ -f $target && ! -L $target ]] && cmp -s -- "$source" "$target"; then
+		run rm -- "$target"
+		INSTALLED+=("removed $target")
+	else
+		SKIPPED+=("$target")
+	fi
+}
+
 remove_copied_directory() {
 	local source=$1 target=$2
 	if [[ -d $target && ! -L $target ]] && diff -qr -- "$source" "$target" >/dev/null 2>&1; then
@@ -703,6 +735,9 @@ deploy_component() {
 		niri)
 			$action "$SCRIPT_DIR/niri/config.kdl" "$HOME/.config/niri/config.kdl"
 			$action "$SCRIPT_DIR/niri/noctalia.kdl" "$HOME/.config/niri/noctalia.kdl"
+			# Provides the custom:reverse_tilde option used in config.kdl.
+			$action "$SCRIPT_DIR/xkb/symbols/custom" "$HOME/.config/xkb/symbols/custom"
+			$action "$SCRIPT_DIR/xkb/rules/evdev" "$HOME/.config/xkb/rules/evdev"
 			;;
 		noctalia)
 			if $UNINSTALL; then
@@ -745,6 +780,19 @@ deploy_component() {
 		elx)
 			$action "$SCRIPT_DIR/elx/config.toml" "$HOME/.config/elx/config.toml"
 			;;
+		apps)
+			$action "$SCRIPT_DIR/yazi/keymap.toml" "$HOME/.config/yazi/keymap.toml"
+			$action "$SCRIPT_DIR/yazi/theme.toml" "$HOME/.config/yazi/theme.toml"
+			$action "$SCRIPT_DIR/kitty/kitty.conf" "$HOME/.config/kitty/kitty.conf"
+			$action "$SCRIPT_DIR/chromium/chromium-flags.conf" "$HOME/.config/chromium-flags.conf"
+			# btop, Zed and xdg-mime rewrite these files, so they are seeded copies.
+			local seed=seed_file
+			$UNINSTALL && seed=remove_copied_file
+			$seed "$SCRIPT_DIR/btop/btop.conf" "$HOME/.config/btop/btop.conf"
+			$seed "$SCRIPT_DIR/zed/settings.json" "$HOME/.config/zed/settings.json"
+			$seed "$SCRIPT_DIR/xdg/mimeapps.list" "$HOME/.config/mimeapps.list"
+			;;
+		services) ;;
 		tutors) ;;
 	esac
 }
@@ -893,6 +941,42 @@ activate_ssh_agent() {
 	run_optional systemctl --user enable --now ssh-agent.service
 }
 
+# Personal project services (systemd user units, Arch only). A unit is enabled
+# only when its binary has been built; otherwise it is just linked.
+USER_SERVICES=(nexus-backend nexus-bot tlsfrag)
+
+activate_user_services() {
+	[[ ${SELECTED[services]:-} ]] || return 0
+	if [[ $PLATFORM != arch ]]; then
+		warn "services: systemd user units are Arch-only; Artix uses the Dinit files in each project"
+		return 0
+	fi
+	local service source target binary
+	for service in "${USER_SERVICES[@]}"; do
+		source="$SCRIPT_DIR/systemd/$service.service"
+		target="$HOME/.config/systemd/user/$service.service"
+		if $UNINSTALL; then
+			if [[ -L $target ]] && command -v systemctl >/dev/null 2>&1; then
+				run_optional systemctl --user disable --now "$service.service"
+			fi
+			unlink_path "$source" "$target"
+		else
+			link_path "$source" "$target"
+		fi
+	done
+	$UNINSTALL && return 0
+	run_optional systemctl --user daemon-reload
+	for service in "${USER_SERVICES[@]}"; do
+		binary=$(sed -n 's/^ExecStart=\([^ ]*\).*/\1/p' "$SCRIPT_DIR/systemd/$service.service")
+		binary=${binary//%h/$HOME}
+		if [[ -x $binary ]]; then
+			run_optional systemctl --user enable --now "$service.service"
+		else
+			warn "services: $binary is not built yet; enable later with: systemctl --user enable --now $service"
+		fi
+	done
+}
+
 enable_display_manager() {
 	[[ ${SELECTED[niri]:-} ]] || return 0
 	[[ $PLATFORM == arch ]] || return 0
@@ -981,6 +1065,7 @@ main() {
 	done
 	activate_pipewire
 	activate_ssh_agent
+	activate_user_services
 
 	if $INSTALL_PACKAGES && $PACKAGE_SETUP_READY && $INSTALL_EXTRAS && ! $UNINSTALL; then
 		confirm "Install/update source-built tools and integrations?" && install_source_tools

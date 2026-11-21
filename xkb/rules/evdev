@@ -1,0 +1,4 @@
+! include %S/evdev
+
+! option = symbols
+    custom:reverse_tilde = +custom(reverse_tilde)
